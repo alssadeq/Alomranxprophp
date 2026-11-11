@@ -10,7 +10,7 @@ RewriteEngine On
 RewriteBase /
 
 # المجلدات الداخلية والبيانات لا تُفتح من المتصفح أبداً
-RewriteRule ^(app|data)(/|$) - [F,L]
+RewriteRule ^(app|data|backups)(/|$) - [F,L]
 RewriteRule (^|/)\.(?!well-known/) - [F,L]
 RewriteRule \.(md|json|lock|log|sh|bak|tmp|ini|dist)$ - [F,L,NC]
 

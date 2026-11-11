@@ -157,7 +157,7 @@
     button.textContent = 'جارِ الإرسال...';
     const body = new FormData();
     body.append('data', JSON.stringify(data));
-    for (const f of files) body.append('files', f.file, f.file.name);
+    for (const f of files) body.append('files[]', f.file, f.file.name);
     progress.hidden = !files.length;
     progress.firstElementChild.style.width = '0';
     try {

@@ -111,7 +111,8 @@ function api_review_submit(string $token): void {
     $inv = $out['invite'];
     respond_then(fn() => send_json(['ok' => true]), function () use ($rv, $inv) {
         notify_company('requests.review', [
-            'vars' => ['name' => $rv['name']], 'title' => 'تقييم جديد من عميل',
+            'vars' => ['name' => $rv['name'], 'email' => $inv['email'] ?? '', 'phone' => $inv['phone'] ?? '', 'project' => $inv['project'] ?? '', 'message' => str_repeat('★', $rv['rating']) . ' ' . $rv['text']],
+            'title' => 'تقييم جديد من عميل', 'linkPath' => '/dashboard',
             'rows' => [['العميل', $rv['name']], ['المشروع', $inv['project'] ?? ''],
                 ['التقييم', str_repeat('★', $rv['rating']) . str_repeat('☆', 5 - $rv['rating']) . ' (' . $rv['rating'] . '/5)'],
                 ['الموافقة على النشر', $rv['consent'] ? 'نعم' : 'لا — للاطلاع الداخلي فقط']],

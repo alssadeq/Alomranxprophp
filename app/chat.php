@@ -36,7 +36,10 @@ function conv_get(string $id): ?array {
 
 function conv_add_message(array &$c, array $msg): void {
     $msg['id'] = 'msg_' . rand_hex(7);
-    $msg['createdAt'] = now_iso();
+    // وقت الرسالة بعد أي علامة استلام/قراءة سُجلت في نفس الجزء من الثانية (حتى لا تظهر «مقروءة» قبل أن تُقرأ)
+    $t = js_time(now_iso());
+    foreach (['customerReadAt', 'customerDeliveredAt', 'staffReadAt', 'staffDeliveredAt'] as $k) if (!empty($c[$k]) && js_time($c[$k]) >= $t) $t = js_time($c[$k]) + 1;
+    $msg['createdAt'] = gmdate('Y-m-d\\TH:i:s', (int)floor($t / 1000)) . sprintf('.%03dZ', (int)$t % 1000);
     foreach ($msg as $k => $v) if ($v === null) unset($msg[$k]);
     $c['messages'][] = $msg;
     if (($msg['sender'] ?? '') === 'customer') $c['unreadForStaff'] = (int)($c['unreadForStaff'] ?? 0) + 1;
@@ -111,7 +114,7 @@ function chat_safe_customer(array $c): array {
     return [
         'id' => $c['id'], 'status' => $c['status'] ?? 'open', 'mode' => $c['mode'] ?? 'ai', 'serviceName' => $c['serviceName'] ?? '',
         'createdAt' => $c['createdAt'], 'updatedAt' => $c['updatedAt'], 'unreadForStaff' => (int)($c['unreadForStaff'] ?? 0),
-        'agent' => !empty($c['humanAssignedTo']) ? ['name' => ($c['humanAssignedName'] ?? '') ?: 'فريق خدمة العملاء', 'online' => false] : null,
+        'agent' => !empty($c['humanAssignedTo']) ? ['name' => ($c['humanAssignedName'] ?? '') ?: 'فريق خدمة العملاء', 'online' => staff_online($c['humanAssignedTo'])] : null,
         'messages' => $msgs,
     ];
 }
@@ -133,6 +136,11 @@ function chat_mark_customer(array &$c, bool $read): bool {
     if ($last && (empty($c['customerDeliveredAt']) || $c['customerDeliveredAt'] < $last)) { $c['customerDeliveredAt'] = $now; $changed = true; }
     if ($read && $last && (empty($c['customerReadAt']) || $c['customerReadAt'] < $last)) { $c['customerReadAt'] = $now; $changed = true; }
     return $changed;
+}
+
+function chat_customer_vars(array $c, array $extra = []): array {
+    $x = $c['customer'] ?? [];
+    return array_merge(['name' => ($x['name'] ?? '') ?: 'زائر', 'phone' => $x['phone'] ?? '', 'email' => $x['email'] ?? ''], $extra);
 }
 
 function chat_customer_rows(array $c): array {
@@ -229,21 +237,54 @@ function chat_send_unavailable(array &$c): void {
     conv_add_message($c, ['sender' => 'ai', 'text' => $text, 'kind' => 'staff_unavailable', 'cta' => $cta]);
 }
 
-function chat_handoff(array &$c, string $reason, string $customerText): void {
+function chat_handoff(array &$c, string $reason, string $customerText, bool $notifyCustomer = true): void {
     $c['mode'] = 'human';
     $c['transferAt'] = now_iso();
-    $c['handoff'] = ['at' => $c['transferAt'], 'reason' => $reason, 'status' => 'sent', 'summary' => '', 'request' => $customerText];
-    chat_send_unavailable($c);
-    $rows = chat_customer_rows($c);
-    $rows[] = ['طلب العميل', $customerText];
-    $why = ['human' => 'طلب العميل التحدث مع موظف', 'failure' => 'تعذر الرد الآلي مؤقتاً'][$reason] ?? 'تحويل إلى موظف';
-    $email = $c['customer']['email'] ?? '';
-    $name = ($c['customer']['name'] ?? '') ?: 'زائر';
-    register_shutdown_function(fn() => notify_company('chat.transfer', ['vars' => ['name' => $name], 'title' => 'طلب التحدث مع موظف — ' . $why, 'rows' => $rows, 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $email ?: null]));
+    $c['handoff'] = ['at' => $c['transferAt'], 'reason' => $reason, 'status' => 'pending'];
+    if (!staff_available()) chat_send_unavailable($c);
+    elseif ($notifyCustomer) {
+        $msg = trim(str_val(ai_instructions()['handoffMessage'] ?? '')) ?: (trim(str_val(get_settings()['chat']['transferMessage'] ?? '')) ?: 'تم تحويل طلبك إلى فريق خدمة العملاء.');
+        conv_add_message($c, ['sender' => 'ai', 'text' => $msg, 'kind' => 'transfer']);
+    }
+    $convId = $c['id'];
+    register_shutdown_function(function () use ($convId, $reason, $customerText) {
+        if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+        elseif (function_exists('litespeed_finish_request')) @litespeed_finish_request();
+        try { chat_handoff_followup($convId, $reason, $customerText); } catch (Throwable $e) { log_error('ملخص التحويل: ' . $e->getMessage()); }
+    });
+}
+
+// ملخص المحادثة للفريق (بالذكاء الاصطناعي إن توفر) ثم إشعار البريد والجرس
+function chat_handoff_followup(string $convId, string $reason, string $customerText): void {
+    $c = conv_get($convId);
+    if (!$c) return;
+    $fields = ['summary' => '', 'request' => $customerText];
+    try { $fields = ai_summarize_for_handoff(chat_ai_history($c), $c['customer'] ?? null); } catch (Throwable $e) {}
+    $labels = [['نوع المشروع', $fields['projectType'] ?? ''], ['المدينة', $fields['city'] ?? ''], ['المساحة', $fields['area'] ?? ''], ['الميزانية', $fields['budget'] ?? ''], ['الموعد المتوقع', $fields['timeline'] ?? ''], ['طلب العميل', $fields['request'] ?? '']];
+    $fresh = conv_mutate($convId, function (&$x) use ($fields, $labels) {
+        $x['handoff'] = array_merge(is_array($x['handoff'] ?? null) ? $x['handoff'] : [], $fields, ['status' => 'sent']);
+        $parts = array_merge([$fields['summary'] ?? ''], array_map(fn($l) => $l[0] . ': ' . $l[1], array_filter($labels, fn($l) => str_val($l[1]) !== '')));
+        $x['aiSummary'] = mb_slice(implode(' | ', array_filter($parts, fn($p) => $p !== '')), 1500);
+        if (!empty($fields['projectType']) && empty($x['serviceName'])) $x['serviceName'] = $fields['projectType'];
+    }) ?? $c;
+    $why = ['human' => 'طلب العميل التحدث مع موظف', 'ai' => 'حوّل المساعد الذكي الطلب إلى الفريق', 'failure' => 'تعذر الرد الآلي مؤقتاً'][$reason] ?? 'تحويل إلى موظف';
+    notify_company('chat.transfer', ['vars' => chat_customer_vars($fresh, ['message' => ($fields['request'] ?? '') ?: $customerText, 'project' => $fields['projectType'] ?? '']),
+        'title' => 'طلب التحدث مع موظف — ' . $why, 'rows' => array_merge(chat_customer_rows($fresh), [['ملخص المحادثة', $fields['summary'] ?? '']], $labels),
+        'linkPath' => '/dashboard', 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => ($fresh['customer']['email'] ?? '') ?: null]);
+}
+
+// سجل المحادثة للوكيل: رسائل العميل والردود فقط
+function chat_ai_history(array $c): array {
+    $out = [];
+    foreach ($c['messages'] ?? [] as $m) {
+        if (empty($m['text']) || !in_array(($m['kind'] ?? '') ?: 'message', ['message', 'welcome', 'transfer_request', 'service_request'], true)) continue;
+        $out[] = ['role' => $m['sender'] === 'customer' ? 'user' : 'assistant', 'text' => $m['text']];
+    }
+    return array_slice($out, -16);
 }
 
 function chat_maybe_remind_unavailable(array &$c): void {
-    if (($c['mode'] ?? '') !== 'human') return;
+    if (($c['mode'] ?? '') !== 'human' || staff_available() || (!empty($c['humanAssignedTo']) && staff_online($c['humanAssignedTo']))) return;
     $last = chat_last_at($c, fn($m) => ($m['kind'] ?? '') === 'staff_unavailable');
     if (!$last || time() - strtotime($last) > 600) chat_send_unavailable($c);
 }
@@ -274,7 +315,8 @@ function api_chat_create(): void {
         'customer' => $customer, 'serviceId' => null, 'serviceName' => '', 'projectId' => null, 'orderId' => null, 'messages' => [],
         'createdAt' => $now, 'updatedAt' => $now, 'unreadForStaff' => 0, 'aiSummary' => ''];
     $greeting = 'مرحباً ' . $name . ' في العمران الذهبية للمقاولات العامة';
-    $extra = str_replace("\r\n", "\n", trim(str_val($settings['welcomeMessage'] ?? '')));
+    $aiWelcome = (($settings['aiEnabled'] ?? null) !== false && ai_runnable_agents()) ? trim(str_val(ai_instructions()['welcomeMessage'] ?? '')) : '';
+    $extra = str_replace("\r\n", "\n", $aiWelcome !== '' ? $aiWelcome : trim(str_val($settings['welcomeMessage'] ?? '')));
     if ($extra === CHAT_LEGACY_WELCOME) $extra = '';
     conv_add_message($c, ['sender' => 'ai', 'text' => $extra !== '' ? $greeting . "\n" . $extra : $greeting, 'kind' => 'welcome']);
     with_lock('conversations', function () use ($c) {
@@ -284,7 +326,7 @@ function api_chat_create(): void {
     });
     record_customer(['name' => $name, 'phone' => $phone, 'email' => $email, 'source' => 'chat', 'ref' => ['type' => 'chat', 'id' => $c['id'], 'label' => 'محادثة', 'at' => $c['createdAt']]]);
     respond_then(fn() => send_json(['conversation' => chat_safe_customer($c), 'accessToken' => $token, 'settings' => public_chat_settings()], 201), function () use ($customer) {
-        notify_company('chat.new', ['vars' => ['name' => $customer['name']], 'title' => 'محادثة جديدة',
+        notify_company('chat.new', ['vars' => $customer, 'title' => 'محادثة جديدة', 'linkPath' => '/dashboard',
             'rows' => [['الاسم', $customer['name']], ['الجوال', $customer['phone']], ['البريد الإلكتروني', $customer['email']]],
             'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $customer['email'] ?: null]);
     });
@@ -347,7 +389,7 @@ function api_chat_message(): void {
             $addAuto();
             $rows = chat_customer_rows($c);
             $rows[] = ['الخدمة', ($c['serviceName'] ?? '') ?: $msg];
-            $notify = ['requests.chatService', ['vars' => ['name' => $name], 'title' => 'طلب خدمة جديد من المحادثة', 'rows' => $rows, 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $email]];
+            $notify = ['requests.chatService', ['vars' => chat_customer_vars($c, ['project' => ($c['serviceName'] ?? '') ?: $msg, 'message' => $msg]), 'title' => 'طلب خدمة جديد من المحادثة', 'rows' => $rows, 'linkPath' => '/dashboard', 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $email]];
             $extra = ['channel' => 'whatsapp', 'serviceRequest' => true];
             return;
         }
@@ -358,13 +400,32 @@ function api_chat_message(): void {
             return;
         }
         conv_add_message($c, ['sender' => 'customer', 'text' => $msg, 'kind' => 'message']);
-        $notify = ['chat.message', ['vars' => ['name' => $name], 'title' => 'رسالة جديدة من زائر', 'rows' => chat_customer_rows($c), 'body' => $msg, 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $email]];
+        $notify = ['chat.message', ['throttleKey' => $c['id'], 'vars' => chat_customer_vars($c, ['message' => $msg]), 'title' => 'رسالة جديدة من زائر', 'rows' => chat_customer_rows($c), 'body' => $msg, 'linkPath' => '/dashboard', 'linkLabel' => 'فتح مركز المحادثات', 'replyTo' => $email]];
         if ($auto && ($c['mode'] ?? '') !== 'human') { $addAuto(); return; }
         if (($c['mode'] ?? '') === 'human') { chat_maybe_remind_unavailable($c); $extra = ['human' => true]; return; }
         if ((get_settings()['chat']['aiEnabled'] ?? null) === false) { $extra = ['human' => true]; return; }
-        // لا يوجد وكيل ذكاء اصطناعي مفعّل في هذه النسخة بعد: الردود التقليدية
-        conv_add_message($c, ['sender' => 'ai', 'text' => chat_rule_reply($c, $msg), 'kind' => 'message']);
+        $extra = ['__ai' => true];
     });
+    if (!empty($extra['__ai'])) {
+        // الرد الآلي: وكلاء الذكاء الاصطناعي، أو الردود التقليدية إن لم يُفعَّل أي وكيل
+        $settings = get_settings();
+        $history = chat_ai_history($updated);
+        $r = ai_route(fn($agent) => ai_build_system_prompt($settings, $updated['customer'] ?? null, $agent), $history);
+        $extra = [];
+        $updated = conv_mutate($updated['id'], function (&$c) use ($r, $msg, &$extra) {
+            if ($r['result']) {
+                $out = ai_extract_handoff($r['result']['text']);
+                if ($out['text'] !== '') conv_add_message($c, ['sender' => 'ai', 'text' => $out['text'], 'kind' => 'message']);
+                if ($out['handoff']) { chat_handoff($c, 'ai', $msg); $extra = ['transfer' => true]; }
+            } elseif ($r['attempted'] === 0) {
+                conv_add_message($c, ['sender' => 'ai', 'text' => chat_rule_reply($c, $msg), 'kind' => 'message']);
+            } else {
+                conv_add_message($c, ['sender' => 'ai', 'text' => str_val(ai_instructions()['failureMessage'] ?? ''), 'kind' => 'message']);
+                chat_handoff($c, 'failure', $msg, false);
+                $extra = ['transfer' => true];
+            }
+        });
+    }
     if (!$updated) send_json(['error' => 'المحادثة غير مصرح بها.'], 403);
     respond_then(fn() => send_json(['conversation' => chat_safe_customer($updated)] + $extra), function () use ($notify) {
         if ($notify) notify_company($notify[0], $notify[1]);
@@ -379,7 +440,7 @@ function api_chat_attachment(): void {
     $f = uploaded_files('file')[0] ?? null;
     if (!$f) send_json(['error' => 'لم يتم إرفاق ملف.'], 400);
     if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > 10 * 1024 * 1024) send_json(['error' => 'حجم الملف يتجاوز 10MB.'], 400);
-    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp'])) send_json(['error' => 'تعذر رفع الملف.'], 400);
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_upload($f['tmp'])) send_json(['error' => 'تعذر رفع الملف.'], 400);
     $ok = in_array($f['type'], ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true) && preg_match('/\.(jpe?g|png|webp|pdf)$/i', (string)$f['name']);
     if (!$ok) send_json(['error' => 'نوع الملف غير مسموح.'], 400);
     $ext = strtolower('.' . pathinfo((string)$f['name'], PATHINFO_EXTENSION));
@@ -389,11 +450,182 @@ function api_chat_attachment(): void {
     if (!is_dir($dir)) @mkdir($dir, 0700, true);
     $uuid = sprintf('%s-%s-4%s-%s%s-%s', rand_hex(4), rand_hex(2), substr(rand_hex(2), 1), dechex(8 + random_int(0, 3)), substr(rand_hex(2), 1), rand_hex(6));
     $final = $uuid . $ext;
-    if (!move_uploaded_file($f['tmp'], $dir . '/' . $final)) send_json(['error' => 'تعذر رفع الملف.'], 400);
+    if (!move_upload($f['tmp'], $dir . '/' . $final)) send_json(['error' => 'تعذر رفع الملف.'], 400);
     $updated = conv_mutate($c['id'], function (&$c) use ($final, $f) {
         chat_mark_customer($c, true);
         conv_add_message($c, ['sender' => 'customer', 'text' => 'مرفق', 'kind' => 'attachment',
             'attachment' => ['url' => '/images/chat/' . $final, 'name' => (string)$f['name'], 'type' => (string)$f['type'], 'size' => (int)$f['size']]]);
     });
     send_json(['conversation' => chat_safe_customer($updated)], 201);
+}
+
+/* ============================= الرد من فريق خدمة العملاء (لوحة التحكم) ============================= */
+// الحضور يُحفظ في data/staff_presence.json (بديل الذاكرة في Node): الموظف «متصل» 90 ثانية بعد آخر طلب.
+
+const STAFF_ONLINE_SEC = 90;
+const CUSTOMER_ONLINE_SEC = 30;
+
+function staff_name(array $u): string { return mb_slice(str_val($u['username'] ?? '') ?: 'موظف', 60); }
+function can_view_chats(?array $u): bool { return $u && (!empty($u['isAdmin']) || !empty($u['permissions']['manageChat']) || !empty($u['permissions']['viewMessages']) || !empty($u['permissions']['replyMessages'])); }
+function can_reply_chats(?array $u): bool { return $u && (!empty($u['isAdmin']) || !empty($u['permissions']['manageChat']) || !empty($u['permissions']['replyMessages'])); }
+
+function staff_presence(): array { return obj(read_json('staff_presence.json', [])); }
+function touch_staff(array $u): void {
+    $p = staff_presence();
+    $cur = $p[$u['id']] ?? null;
+    if ($cur && time() - (int)$cur['at'] < 10 && ($cur['name'] ?? '') === staff_name($u)) return;
+    with_lock('staff_presence', function () use ($u) {
+        $p = staff_presence();
+        foreach ($p as $id => $s) if (time() - (int)($s['at'] ?? 0) > 86400) unset($p[$id]);
+        $p[$u['id']] = ['at' => time(), 'name' => staff_name($u), 'canReply' => can_reply_chats($u)];
+        write_json('staff_presence.json', $p);
+    });
+}
+function staff_online(?string $id): bool { if (!$id) return false; $s = staff_presence()[$id] ?? null; return $s && time() - (int)$s['at'] < STAFF_ONLINE_SEC; }
+function online_staff(): array {
+    $out = [];
+    foreach (staff_presence() as $id => $s) if (time() - (int)($s['at'] ?? 0) < STAFF_ONLINE_SEC) $out[] = ['id' => (string)$id, 'name' => $s['name'], 'canReply' => !empty($s['canReply'])];
+    return $out;
+}
+function staff_available(): bool { foreach (online_staff() as $s) if ($s['canReply']) return true; return false; }
+function customer_online(array $c): bool { return !empty($c['customerSeenAt']) && time() - strtotime((string)$c['customerSeenAt']) < CUSTOMER_ONLINE_SEC; }
+
+function require_chat_view(): array { $u = require_login(); if (!can_view_chats($u)) send_json(['error' => 'لا تملك صلاحية عرض المحادثات.'], 403); touch_staff($u); return $u; }
+function require_chat_reply(): array { $u = require_login(); if (!can_reply_chats($u)) send_json(['error' => 'لا تملك صلاحية الرد على المحادثات.'], 403); touch_staff($u); return $u; }
+
+function locked_by_other(array $c, array $u): bool { return !empty($c['humanAssignedTo']) && $c['humanAssignedTo'] !== $u['id'] && staff_online($c['humanAssignedTo']); }
+function staff_meta(array $c, array $u): array {
+    $id = $c['humanAssignedTo'] ?? null;
+    return ['customerOnline' => customer_online($c), 'customerSeenAt' => $c['customerSeenAt'] ?? null,
+        'assignee' => $id ? ['id' => $id, 'name' => ($c['humanAssignedName'] ?? '') ?: (staff_presence()[$id]['name'] ?? 'موظف'), 'online' => staff_online($id), 'me' => $id === $u['id']] : null,
+        'canReply' => can_reply_chats($u) && !locked_by_other($c, $u)];
+}
+function staff_conv(array $c): array {
+    $lastReply = chat_last_at($c, 'chat_is_reply');
+    unset($c['accessTokenHash']);
+    $c['messages'] = array_map(function ($m) use ($c, $lastReply) { $s = chat_receipt($c, $m, $lastReply); if ($s !== null) $m['status'] = $s; return $m; }, $c['messages']);
+    return $c;
+}
+function mark_staff_read(array &$c): void {
+    $last = chat_last_at($c, fn($m) => $m['sender'] === 'customer');
+    if (!$last || (!empty($c['staffReadAt']) && $c['staffReadAt'] >= $last)) return;
+    $c['staffReadAt'] = now_iso();
+    $c['staffDeliveredAt'] = $c['staffReadAt'];
+}
+function chat_assign(array &$c, array $u): void {
+    $prev = $c['humanAssignedTo'] ?? null;
+    $c['mode'] = 'human';
+    $c['humanAssignedTo'] = $u['id'];
+    $c['humanAssignedName'] = staff_name($u);
+    $c['assignedAt'] = now_iso();
+    if ($prev !== $u['id']) conv_add_message($c, ['sender' => 'system', 'text' => 'انضم ' . staff_name($u) . ' من فريق خدمة العملاء إلى المحادثة.', 'kind' => 'staff_joined']);
+}
+function conv_or_404(string $id): array { $c = conv_get($id); if (!$c) send_json(['error' => 'المحادثة غير موجودة.'], 404); return $c; }
+
+function api_chat_admin_list(): void {
+    $me = require_chat_view();
+    $all = with_lock('conversations', function () {
+        $all = conv_all();
+        $now = now_iso();
+        $changed = false;
+        foreach ($all as $i => $c) {
+            $last = chat_last_at($c, fn($m) => $m['sender'] === 'customer');
+            if ($last && (empty($c['staffDeliveredAt']) || $c['staffDeliveredAt'] < $last)) { $all[$i]['staffDeliveredAt'] = $now; $changed = true; }
+        }
+        if ($changed) write_json('conversations.json', $all);
+        return $all;
+    });
+    usort($all, fn($a, $b) => strtotime((string)$b['updatedAt']) <=> strtotime((string)$a['updatedAt']));
+    $convs = array_map(function ($c) use ($me) {
+        $last = end($c['messages']) ?: null;
+        return array_merge(['id' => $c['id'], 'status' => $c['status'], 'mode' => $c['mode'], 'serviceName' => $c['serviceName'] ?? '', 'createdAt' => $c['createdAt'], 'updatedAt' => $c['updatedAt'],
+            'unreadForStaff' => (int)($c['unreadForStaff'] ?? 0), 'customer' => $c['customer'], 'aiSummary' => $c['aiSummary'] ?? '', 'transferAt' => $c['transferAt'] ?? null,
+            'lastMessage' => $last ? ['sender' => $last['sender'], 'text' => mb_slice(str_val($last['text'] ?? ''), 120), 'createdAt' => $last['createdAt'], 'status' => chat_receipt($c, $last, chat_last_at($c, 'chat_is_reply'))] : null],
+            staff_meta($c, $me));
+    }, $all);
+    send_json(['me' => ['id' => $me['id'], 'name' => staff_name($me), 'canReply' => can_reply_chats($me), 'isAdmin' => !empty($me['isAdmin'])], 'onlineStaff' => online_staff(), 'conversations' => $convs]);
+}
+
+function api_chat_admin_get(string $id): void {
+    $me = require_chat_view();
+    conv_or_404($id);
+    $c = conv_mutate($id, function (&$c) use ($me) {
+        if (!empty($c['unreadForStaff']) && (empty($c['humanAssignedTo']) || $c['humanAssignedTo'] === $me['id'])) $c['unreadForStaff'] = 0;
+        mark_staff_read($c);
+    }, false);
+    send_json(array_merge(['conversation' => staff_conv($c)], staff_meta($c, $me)));
+}
+
+function api_chat_admin_claim(string $id): void {
+    $me = require_chat_reply();
+    $c = conv_or_404($id);
+    if (locked_by_other($c, $me) && !(!empty(json_body()['force']) && !empty($me['isAdmin']))) {
+        send_json(['error' => 'يرد على هذه المحادثة الآن: ' . (($c['humanAssignedName'] ?? '') ?: 'موظف آخر') . '.', 'assignee' => staff_meta($c, $me)['assignee']], 409);
+    }
+    $c = conv_mutate($id, function (&$c) use ($me) { chat_assign($c, $me); });
+    send_json(array_merge(['conversation' => staff_conv($c)], staff_meta($c, $me)));
+}
+
+function api_chat_admin_release(string $id): void {
+    $me = require_chat_reply();
+    $c = conv_or_404($id);
+    if (!empty($c['humanAssignedTo']) && $c['humanAssignedTo'] !== $me['id'] && empty($me['isAdmin']) && staff_online($c['humanAssignedTo'])) send_json(['error' => 'لا يمكنك تحرير محادثة يتولاها موظف آخر.'], 409);
+    $toAi = (json_body()['toAi'] ?? null) === true;
+    $c = conv_mutate($id, function (&$c) use ($toAi) {
+        $c['humanAssignedTo'] = null;
+        $c['humanAssignedName'] = '';
+        if ($toAi) $c['mode'] = 'ai';
+        conv_add_message($c, ['sender' => 'system', 'text' => $toAi ? 'عادت المحادثة إلى المساعد الذكي، ويمكنك طلب موظف في أي وقت.' : 'سيتابع معك أحد أعضاء فريق خدمة العملاء قريباً.', 'kind' => $toAi ? 'mode_change' : 'staff_left']);
+    });
+    send_json(array_merge(['conversation' => staff_conv($c)], staff_meta($c, $me)));
+}
+
+function api_chat_admin_reply(string $id): void {
+    $me = require_chat_reply();
+    rate_limit('chat_send', 60, 600, 'تم تجاوز عدد الرسائل مؤقتاً. حاول بعد قليل.', $id);
+    $c = conv_or_404($id);
+    $text = trim(str_val(json_body()['text'] ?? ''));
+    if ($text === '' || mb_len($text) > 3000) send_json(['error' => 'الرسالة غير صالحة.'], 400);
+    if (locked_by_other($c, $me)) send_json(['error' => 'يرد على هذه المحادثة الآن: ' . (($c['humanAssignedName'] ?? '') ?: 'موظف آخر') . '.', 'assignee' => staff_meta($c, $me)['assignee']], 409);
+    $c = conv_mutate($id, function (&$c) use ($me, $text) {
+        if (($c['humanAssignedTo'] ?? null) !== $me['id']) chat_assign($c, $me);
+        mark_staff_read($c);
+        conv_add_message($c, ['sender' => 'human', 'text' => $text, 'staffId' => $me['id'], 'staffName' => staff_name($me)]);
+        $c['unreadForStaff'] = 0;
+        $c['status'] = 'open';
+    });
+    send_json(array_merge(['conversation' => staff_conv($c)], staff_meta($c, $me)));
+}
+
+function api_chat_admin_close(string $id): void {
+    $me = require_chat_reply();
+    $c = conv_or_404($id);
+    if (locked_by_other($c, $me) && empty($me['isAdmin'])) send_json(['error' => 'يتولى هذه المحادثة موظف آخر.'], 409);
+    conv_mutate($id, function (&$c) { $c['status'] = 'closed'; $c['humanAssignedTo'] = null; $c['humanAssignedName'] = ''; });
+    send_json(['ok' => true]);
+}
+
+function api_chat_admin_presence(): void { require_chat_view(); send_json(['ok' => true]); }
+
+function api_chat_admin_analytics(): void {
+    require_chat_view();
+    $a = conv_all();
+    $replies = 0; $ms = 0; $wa = 0; $calls = 0; $sr = 0;
+    foreach ($a as $c) {
+        $m = $c['messages'];
+        for ($i = 1; $i < count($m); $i++) if ($m[$i - 1]['sender'] === 'customer' && $m[$i]['sender'] === 'ai') { $replies++; $ms += (int)round((js_time($m[$i]['createdAt']) - js_time($m[$i - 1]['createdAt']))); }
+        foreach ($m as $x) { $k = $x['kind'] ?? ''; if ($k === 'whatsapp_click') $wa++; if ($k === 'call_click') $calls++; if ($k === 'service_request') $sr++; }
+    }
+    $since = (microtime(true) - 86400) * 1000;
+    send_json(['total' => count($a), 'ai' => count(array_filter($a, fn($c) => $c['mode'] === 'ai' || array_filter($c['messages'], fn($m) => $m['sender'] === 'ai'))),
+        'human' => count(array_filter($a, fn($c) => $c['mode'] === 'human')), 'transferred' => count(array_filter($a, fn($c) => !empty($c['transferAt']))),
+        'open' => count(array_filter($a, fn($c) => $c['status'] === 'open')), 'unread' => array_sum(array_map(fn($c) => (int)($c['unreadForStaff'] ?? 0), $a)),
+        'serviceRequests' => $sr, 'whatsappClicks' => $wa, 'callClicks' => $calls, 'avgResponseMs' => $replies ? (int)round($ms / $replies) : 0,
+        'last24h' => count(array_filter($a, fn($c) => js_time($c['createdAt']) > $since))]);
+}
+// وقت ISO بالمللي ثانية
+function js_time($iso): float {
+    $s = (string)$iso;
+    $ms = preg_match('/\.(\d{1,3})/', $s, $m) ? (int)str_pad($m[1], 3, '0') : 0;
+    return (float)strtotime($s) * 1000 + $ms;
 }

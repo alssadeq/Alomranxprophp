@@ -15,9 +15,8 @@ function sanitize_color($v, string $fb): string {
     $v = trim(str_val($v));
     return preg_match('/^(#[0-9a-f]{3,8}|rgba?\(\s*[0-9 .,%]+\s*\)|hsla?\(\s*[0-9 .%,]+\s*\))$/i', $v) ? $v : $fb;
 }
-function sanitize_asset_url($v): string {
-    return (is_string($v) && preg_match('#^/images/[A-Za-z0-9._/-]+$#', $v)) ? $v : '';
-}
+// نفس sanitizeAssetUrl في نسخة Node (صورة مرفوعة أو رابط http/https)
+function sanitize_asset_url($v): string { return sanitize_asset_url_admin($v); }
 // نفس sanitizeCustomSvg في نسخة Node
 function sanitize_custom_svg($value): string {
     $svg = trim(str_val($value));
@@ -106,7 +105,7 @@ function api_contact(): void {
     record_customer(['name' => $name, 'phone' => $phone, 'source' => 'contact', 'ref' => ['type' => 'contact', 'id' => $msg['id'], 'label' => 'طلب تواصل: ' . ($label ?: 'عام'), 'at' => $msg['createdAt']]]);
     respond_then(fn() => send_json(['ok' => true, 'messageRecord' => $msg], 201), function () use ($msg, $label) {
         notify_company('requests.contact', [
-            'vars' => ['name' => $msg['name']], 'title' => 'رسالة جديدة من نموذج التواصل',
+            'vars' => ['name' => $msg['name'], 'phone' => $msg['phone'], 'project' => $label, 'message' => $msg['message']], 'title' => 'رسالة جديدة من نموذج التواصل', 'linkPath' => '/dashboard',
             'rows' => [['الاسم', $msg['name']], ['الجوال', $msg['phone']], ['نوع المشروع', $label]],
             'body' => $msg['message'], 'linkLabel' => 'عرض الرسائل في لوحة التحكم',
         ]);
@@ -121,63 +120,4 @@ function respond_then(callable $respond, callable $after): void {
         try { $after(); } catch (Throwable $e) { log_error($e->getMessage()); }
     });
     $respond();
-}
-
-/* ---------- قاعدة العملاء (نفس lib/customers.js) ---------- */
-
-function normalize_phone($raw): string {
-    $s = preg_replace('/[\s()\-.]/', '', trim(ar_digits(str_val($raw))));
-    if ($s === '') return '';
-    if (str_starts_with($s, '00')) $s = '+' . substr($s, 2);
-    if (str_starts_with($s, '+')) return preg_match('/^\+[1-9]\d{6,14}$/', $s) ? $s : '';
-    if (preg_match('/^05\d{8}$/', $s)) return '+966' . substr($s, 1);
-    if (preg_match('/^5\d{8}$/', $s)) return '+966' . $s;
-    if (preg_match('/^9665\d{8}$/', $s)) return '+' . $s;
-    return preg_match('/^\d{7,15}$/', $s) ? $s : '';
-}
-
-function record_customer(array $data): void {
-    try {
-        with_lock('customers', function () use ($data) {
-            $list = read_json('customers.json', []);
-            if (!is_list($list)) $list = [];
-            $p = normalize_phone($data['phone'] ?? '');
-            $e = strtolower(trim(str_val($data['email'] ?? '')));
-            if (strlen($e) > 254 || !preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/', $e)) $e = '';
-            if ($p === '' && $e === '') return;
-            $now = now_iso();
-            $ref = $data['ref'] ?? null;
-            $at = $ref['at'] ?? $now;
-            $idx = null;
-            foreach ($list as $i => $c) {
-                if (($p !== '' && ($c['phone'] ?? '') === $p) || ($e !== '' && ($c['email'] ?? '') === $e)) { $idx = $i; break; }
-            }
-            $clean = fn($v, $n) => mb_slice(trim(preg_replace('/\s+/u', ' ', str_val($v))), $n);
-            if ($idx === null) {
-                $list[] = ['id' => 'cus_' . rand_hex(8), 'name' => $clean($data['name'] ?? '', 100) ?: 'عميل بدون اسم', 'phone' => $p, 'email' => $e,
-                    'organization' => '', 'status' => 'new', 'notes' => '', 'sources' => [], 'refs' => [], 'contactLog' => [],
-                    'createdAt' => $at, 'updatedAt' => $now, 'lastActivityAt' => $at, 'lastContactAt' => null];
-                $idx = count($list) - 1;
-            } else {
-                $c = &$list[$idx];
-                foreach ($c['refs'] ?? [] as $r) if ($ref && ($r['type'] ?? '') === $ref['type'] && ($r['id'] ?? '') === $ref['id']) return;
-                if (empty($c['phone']) && $p) $c['phone'] = $p;
-                if (empty($c['email']) && $e) $c['email'] = $e;
-                if ((empty($c['name']) || $c['name'] === 'عميل بدون اسم') && !empty($data['name'])) $c['name'] = $clean($data['name'], 100);
-                if ($at < ($c['createdAt'] ?? $at)) $c['createdAt'] = $at;
-                $c['updatedAt'] = $now;
-                unset($c);
-            }
-            $c = &$list[$idx];
-            if (!is_list($c['sources'] ?? null)) $c['sources'] = [];
-            if (!empty($data['source']) && !in_array($data['source'], $c['sources'], true)) $c['sources'][] = $data['source'];
-            if ($ref) {
-                $c['refs'][] = ['type' => $ref['type'], 'id' => $ref['id'], 'label' => $clean($ref['label'] ?? '', 200), 'at' => $at];
-                usort($c['refs'], fn($a, $b) => strcmp((string)$b['at'], (string)$a['at']));
-                if ($at > ($c['lastActivityAt'] ?? '')) $c['lastActivityAt'] = $at;
-            }
-            unset($c);
-            write_json('customers.json', $list);
-        });
-    } catch (Throwable $e) { log_error('تعذر تسجيل العميل: ' . $e->getMessage()); }
 }

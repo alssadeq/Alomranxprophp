@@ -12,11 +12,20 @@ return [
     'mail_from' => 'info@alomrango.com',
     'mail_from_name' => 'العمران الذهبية للمقاولات العامة',
 
-    // إرسال عبر SMTP (مثل بريد Hostinger: smtp.hostinger.com على 465). اتركه فارغاً لاستخدام بريد الاستضافة الافتراضي.
+    // يُفضّل ضبط بريد الشركة من لوحة التحكم. هذا بديل اختياري (مثل smtp.hostinger.com على 465).
     'smtp_host' => '',
     'smtp_port' => 465,
     'smtp_user' => '',
     'smtp_pass' => '',
 
     'timezone' => 'Asia/Riyadh',
+
+    // نفس SESSION_SECRET في استضافة Node القديمة لتعمل مفاتيح الذكاء الاصطناعي المحفوظة (اختياري)
+    'session_secret' => '',
+
+    // رمز التهيئة لإنشاء أول حساب (اختياري؛ يُنشأ تلقائياً في data/bootstrap-token.txt)
+    'bootstrap_token' => '',
+
+    // false لإيقاف الإرسال عبر بريد الاستضافة الافتراضي (mail) إن لم يُضبط بريد الشركة
+    'php_mail' => true,
 ];

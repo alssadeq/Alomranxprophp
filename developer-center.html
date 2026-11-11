@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مركز تحكم المطوّر | العمران</title>
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/dev-center.css">
+</head>
+<body>
+
+<header class="dash-header">
+  <div class="dash-header-inner">
+    <div class="auth-brand">
+      <strong>العمران</strong>
+      <span>مركز تحكم المطوّر</span>
+    </div>
+    <div class="dash-user-box">
+      <span id="currentDevLabel">...</span>
+      <a href="/dashboard" class="btn btn-outline btn-sm">لوحة تحكم الأعمال</a>
+      <button id="devLogoutBtn" class="btn btn-outline btn-sm">تسجيل الخروج</button>
+    </div>
+  </div>
+</header>
+
+<main class="dash-main">
+
+  <nav class="dash-tabs" role="tablist">
+    <button class="dash-tab is-active" data-tab="health" role="tab">الحالة العامة</button>
+    <button class="dash-tab" data-tab="security" role="tab">الأمان</button>
+    <button class="dash-tab" data-tab="errors" role="tab">الأخطاء</button>
+    <button class="dash-tab" data-tab="performance" role="tab">الأداء</button>
+    <button class="dash-tab" data-tab="database" role="tab">قاعدة البيانات</button>
+    <button class="dash-tab" data-tab="audit" role="tab">سجل التدقيق</button>
+    <button class="dash-tab" data-tab="backups" role="tab">النسخ الاحتياطي والتصدير</button>
+    <button class="dash-tab" data-tab="updates" role="tab">التحديثات</button>
+    <button class="dash-tab" data-tab="ai" role="tab">وكلاء الذكاء الاصطناعي</button>
+    <button class="dash-tab" data-tab="settings" role="tab">الصيانة والميزات</button>
+  </nav>
+
+  <!-- ============ الحالة العامة (System Health + System Info) ============ -->
+  <section id="tab-health" class="dash-panel is-active">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>حالة النظام</h2>
+        <button id="refreshHealthBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <div class="dev-grid" id="healthStats">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>معلومات النظام</h2>
+      <div id="systemInfo"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ الأمان ============ -->
+  <section id="tab-security" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>محاولات دخول فاشلة</h2>
+        <button id="refreshSecurityBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <div class="overview-list" id="securityEvents"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ الأخطاء ============ -->
+  <section id="tab-errors" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>سجل الأخطاء</h2>
+        <button id="refreshErrorsBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <p class="form-note">يشمل أخطاء السيرفر غير المتوقعة فقط. أخطاء التحقق من المدخلات (مثل كلمة مرور قصيرة) لا تُسجَّل هنا لأنها ليست أعطالاً.</p>
+      <div class="overview-list" id="errorLog"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ الأداء ============ -->
+  <section id="tab-performance" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>أداء الطلبات (منذ آخر إعادة تشغيل للسيرفر)</h2>
+        <button id="refreshPerfBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <p class="form-note">قياسات في الذاكرة فقط لآخر 300 طلب — لا تُخزَّن على القرص حتى لا تؤثر على الأداء.</p>
+      <div class="overview-list" id="perfRoutes"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ قاعدة البيانات (ملفات JSON) ============ -->
+  <section id="tab-database" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>ملفات البيانات (data/*.json)</h2>
+        <button id="refreshDbBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <p class="form-note">هذا المشروع يستخدم ملفات JSON كقاعدة بيانات مباشرة — لا يوجد سيرفر قاعدة بيانات منفصل ليُفحص اتصاله.</p>
+      <div class="overview-list" id="dbFiles"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ سجل التدقيق (Audit Trail) ============ -->
+  <section id="tab-audit" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>سجل إجراءات المطوّرين</h2>
+        <button id="refreshAuditBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <div class="overview-list" id="auditLog"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <!-- ============ النسخ الاحتياطي ============ -->
+  <section id="tab-backups" class="dash-panel">
+    <div class="card">
+      <h2>إنشاء نسخة احتياطية</h2>
+      <p class="form-note">تُنشأ كل نسخة بصيغة ZIP ويُتحقق من سلامتها بعد إنشائها مباشرة بفك ضغط كل ملف فيها. لا تتضمن أي نسخة أسرار التشغيل أو الجلسات.</p>
+      <div class="backup-type-grid" id="backupTypeGrid">
+        <label class="backup-type"><input type="radio" name="backupType" value="data" checked><strong>البيانات فقط</strong><span>مجلد data/: المستخدمون، الأعمال، الإعدادات، الرسائل، المحادثات والسجلات.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="media"><strong>الصور والملفات المرفوعة</strong><span>مجلد public/images/: صور الأعمال والهوية والبانرات ومرفقات المحادثات.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="full"><strong>نسخة كاملة</strong><span>البيانات + الصور والملفات المرفوعة معاً.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="site"><strong>تصدير الموقع لاستضافة أخرى</strong><span>الكود كاملاً + البيانات + الملفات + دليل نقل خطوة بخطوة. بدون node_modules وملف .env.</span></label>
+      </div>
+      <button id="createBackupBtn" class="btn btn-dark">إنشاء النسخة الآن</button>
+      <p id="createBackupMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row">
+        <h2>النسخ المحفوظة</h2>
+        <button id="refreshBackupsBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <div class="overview-list" id="backupsList"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card">
+      <h2>تصدير البيانات</h2>
+      <p class="form-note">تنزيل فوري لكل مجموعة بيانات بصيغة JSON (للنقل والبرمجة) أو CSV (للفتح في Excel). لا يتضمن كلمات المرور.</p>
+      <div class="overview-list" id="exportsList"><p class="muted">جارِ التحميل...</p></div>
+      <div class="dev-flex-between" style="margin-top:12px;gap:10px;flex-wrap:wrap;">
+        <span><strong>كل البيانات في ملف واحد</strong> <span class="muted">— JSON</span></span>
+        <a class="btn btn-outline btn-sm" href="/api/developer/exports/all?format=json" download>تنزيل الكل</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>نقل الموقع إلى استضافة أخرى</h2>
+      <ol class="migration-steps">
+        <li>أنشئ نسخة من نوع <strong>«تصدير الموقع لاستضافة أخرى»</strong> ونزّلها.</li>
+        <li>على الاستضافة الجديدة أنشئ تطبيق Node.js (الإصدار 20 أو أحدث)، وملف التشغيل <code>server.js</code>، وأمر التشغيل <code>npm start</code>.</li>
+        <li>ارفع ملف ZIP كما هو أو فك ضغطه في مجلد التطبيق، ثم ثبّت الحزم بـ <code>npm install --omit=dev</code>.</li>
+        <li>أدخل متغيرات البيئة: <code>NODE_ENV</code>، <code>SESSION_SECRET</code>، <code>BOOTSTRAP_TOKEN</code>، <code>APP_BASE_URL</code> وإعدادات البريد <code>SMTP_*</code>.</li>
+        <li>شغّل التطبيق وسجّل الدخول بحساباتك الحالية، ثم وجّه النطاق إلى الاستضافة الجديدة.</li>
+      </ol>
+      <p class="form-note">التفاصيل الكاملة داخل الحزمة في ملف <code>MIGRATION-README.md</code>.</p>
+    </div>
+  </section>
+
+  <!-- ============ التحديثات والإصدارات ============ -->
+  <section id="tab-updates" class="dash-panel">
+    <div class="card update-hero-card">
+      <div class="dev-flex-between" style="gap:18px;flex-wrap:wrap;">
+        <div>
+          <span class="update-kicker">RELEASE & DEPLOYMENT CENTER</span>
+          <h2>التحديثات والإصدارات</h2>
+          <p class="form-note">إدارة دورة الإصدار كاملة من داخل Developer Center: رفع آمن، فحص مسبق، مقارنة تغييرات، Backup، تثبيت، Health Check، جدولة وRollback.</p>
+        </div>
+        <div style="text-align:right"><span class="update-status-pill" id="updateSystemStatus">جارِ الفحص...</span><div class="form-note" id="updateLastUpdate" style="margin-top:8px"></div></div>
+      </div>
+    </div>
+
+    <div class="dev-grid update-metrics" id="updateMetrics">
+      <div class="dev-stat-card"><span class="num" id="metricCurrentVersion">—</span><span class="label">الإصدار الحالي</span></div>
+      <div class="dev-stat-card"><span class="num" id="metricAvailable">0</span><span class="label">تحديثات متاحة</span></div>
+      <div class="dev-stat-card"><span class="num" id="metricLastInstalled">—</span><span class="label">آخر إصدار مثبت</span></div>
+      <div class="dev-stat-card"><span class="num" id="metricScheduled">0</span><span class="label">تحديثات مجدولة</span></div>
+    </div>
+
+    <div class="card" id="versionCheckCard">
+      <div class="card-head-row"><div><h2>التحقق من إصدار جديد للتطبيق</h2><p class="form-note">يقارن الإصدار الحالي بمصدر خارجي تحدده أنت (رابط HTTPS يرد بـ JSON يحتوي رقم إصدار) وينبّهك عند وجود إصدار أحدث — للتنبيه فقط، لا يرفع ولا يثبّت شيئاً تلقائياً.</p></div><span class="update-status-pill" id="versionCheckStatusPill">—</span></div>
+      <div id="versionCheckResult"><p class="muted">جارِ التحميل...</p></div>
+      <div class="dev-flex-between" style="gap:14px;flex-wrap:wrap;margin-top:10px;">
+        <button id="runVersionCheckBtn" class="btn btn-dark btn-sm">فحص الآن</button>
+        <span class="muted" id="versionCheckLastChecked"></span>
+      </div>
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer;">إعدادات مصدر التحقق</summary>
+        <form id="versionCheckSettingsForm" class="dash-form" style="margin-top:10px;">
+          <div class="form-grid">
+            <div class="form-field"><label for="versionCheckUrl">رابط التحقق (HTTPS، يرد بـ JSON فيه version)</label><input id="versionCheckUrl" type="url" placeholder="https://example.com/version.json"></div>
+            <div class="form-field"><label for="versionCheckInterval">الفحص التلقائي كل (ساعة)</label><input id="versionCheckInterval" type="number" min="1" max="168" value="24"></div>
+          </div>
+          <label class="dev-switch-label"><input type="checkbox" id="versionCheckAutoEnabled"> تفعيل الفحص التلقائي الدوري</label>
+          <button type="submit" class="btn btn-outline btn-sm">حفظ الإعدادات</button>
+          <span id="versionCheckSettingsMessage" class="form-note"></span>
+        </form>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row"><div><h2>إنشاء تحديث جديد</h2><p class="form-note">الـ ZIP يجب أن يحتوي على <code>manifest.json</code> ومجلد <code>files/</code>. الـ Manifest هو المصدر النهائي للنسخة والملفات.</p></div><span class="muted">ZIP / حتى 25MB</span></div>
+      <form id="smartUpdateUploadForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field"><label for="smartUpdateVersion">رقم الإصدار *</label><input id="smartUpdateVersion" name="version" required pattern="\d+\.\d+\.\d+" placeholder="1.5.0"><p class="form-note">مُقترح تلقائياً بناءً على الإصدار الحالي ونوع التحديث — يمكنك تعديله يدوياً إذا لزم.</p></div>
+          <div class="form-field"><label for="smartUpdateName">اسم التحديث *</label><input id="smartUpdateName" name="name" required maxlength="160" placeholder="تطوير نظام المحادثات"></div>
+          <div class="form-field"><label for="smartUpdateReleaseType">نوع التحديث *</label><select id="smartUpdateReleaseType" name="releaseType"><option>Major</option><option>Minor</option><option selected>Patch</option><option>Security</option><option>Bug Fix</option><option>Feature</option><option>Design</option><option>Content</option></select></div>
+          <div class="form-field"><label for="smartUpdatePackage">ملف التحديث ZIP *</label><input type="file" id="smartUpdatePackage" name="package" accept=".zip,application/zip" required></div>
+          <div class="form-field"><label for="smartUpdateDescription">وصف التحديث</label><textarea id="smartUpdateDescription" name="description" maxlength="3000" rows="3" placeholder="ملخص واضح لما يقدمه الإصدار"></textarea></div>
+          <div class="form-field"><label for="smartUpdateReleaseNotes">Release Notes</label><textarea id="smartUpdateReleaseNotes" name="releaseNotes" maxlength="8000" rows="3" placeholder="✨ الإضافات...
+🐛 الإصلاحات...
+🎨 التحسينات..."></textarea></div>
+          <div class="form-field"><label for="smartUpdateRequirements">المتطلبات والتوافق</label><textarea id="smartUpdateRequirements" name="requirements" maxlength="3000" rows="3" placeholder="Node 18+، إصدار أدنى 1.4.0، ..."></textarea></div>
+        </div>
+        <div class="dev-flex-between" style="gap:14px;flex-wrap:wrap;margin-top:10px;">
+          <label class="dev-switch-label"><input type="checkbox" id="smartUpdateRestart" name="requiresRestart"> يتطلب إعادة تشغيل</label>
+          <label class="dev-switch-label"><input type="checkbox" id="smartUpdateMigration" name="requiresMigration"> يتطلب Migration</label>
+          <label class="dev-switch-label"><input type="checkbox" id="smartUpdateMandatory" name="mandatory"> تحديث أمني/إجباري</label>
+        </div>
+        <div class="update-bundle-rule"><strong>الحماية:</strong> يتم رفض Path Traversal، الرموز الرمزية، الملفات غير المعلنة، الملفات الحساسة، والملفات التي تتجاوز الحدود. ويمكن تفعيل <strong>Signed Updates</strong> عبر <code>UPDATE_SIGNING_PUBLIC_KEY</code> و<code>REQUIRE_SIGNED_UPDATES=true</code>.</div>
+        <button type="submit" class="btn btn-dark" id="uploadSmartUpdateBtn">رفع وفحص التحديث</button>
+        <p id="smartUpdateUploadMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card" id="smartUpdatePreviewCard">
+      <div class="card-head-row"><div><h2>Pre-Update Check & Review</h2><p class="form-note">لن يتم تعديل الملفات أثناء الفحص. لا يبدأ التثبيت إلا بعد موافقة المطوّر.</p></div><span class="muted" id="smartUpdatePreviewMeta">اختر تحديثاً من السجل</span></div>
+      <div id="smartUpdatePreview"><p class="muted">المعاينة ستعرض الإصدار، التوافق، الملفات الجديدة/المعدلة/المحذوفة، Migration، المخاطر والتوقيع.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row"><div><h2>سجل الإصدارات</h2><p class="form-note">كل إصدار يحتفظ بحالة التثبيت، من قام بالعملية، الـ Backup المرتبط ونتيجة Health Check.</p></div><button id="refreshSmartUpdatesBtn" class="btn btn-outline btn-sm">تحديث</button></div>
+      <div class="overview-list" id="smartUpdateHistory"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row"><div><h2>سياسة التحديثات والنسخ</h2><p class="form-note">إعدادات آمنة افتراضياً. الاحتفاظ بالنسخ يؤثر على Snapshots القديمة، بينما Backup البيانات يبقى مستقلاً ويمكن إدارته من قسم النسخ الاحتياطية.</p></div><span class="muted">Policy</span></div>
+      <form id="updatePolicyForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field"><label for="updateRetentionCount">عدد الإصدارات المحتفظ بها</label><input id="updateRetentionCount" type="number" min="1" max="50" value="5"></div>
+        </div>
+        <div class="dev-flex-between" style="gap:14px;flex-wrap:wrap;">
+          <label class="dev-switch-label"><input type="checkbox" id="updateMaintenanceToggle" checked> تفعيل Maintenance أثناء التحديث</label>
+          <label class="dev-switch-label"><input type="checkbox" id="updateAutoRollbackToggle"> Rollback تلقائي عند فشل Health Check</label>
+        </div>
+        <button type="submit" class="btn btn-outline">حفظ السياسة</button>
+        <span id="updatePolicyMessage" class="form-note"></span>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row"><h2>فحص الاعتماديات والثغرات</h2><button id="runUpdateCheckBtn" class="btn btn-outline btn-sm">تشغيل الفحص</button></div>
+      <div id="updateReport"><p class="muted">لم يتم تشغيل أي فحص بعد.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ وكلاء الذكاء الاصطناعي (AI Provider Management) ============ -->
+  <section id="tab-ai" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <div>
+          <h2>إدارة وكلاء الذكاء الاصطناعي</h2>
+          <p class="form-note">وكلاء خدمة العملاء في محادثة الموقع. مفاتيح API تُشفَّر على الخادم ولا تُرسل إلى المتصفح بعد الحفظ، وكل الاستدعاءات تتم من الخادم. عند إيقاف كل الوكلاء تعمل المحادثة بالردود التقليدية.</p>
+        </div>
+        <span class="update-status-pill">Server-side</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="aiDefaultAgent">الوكيل الافتراضي</label>
+          <select id="aiDefaultAgent">
+            <option value="automatic">تلقائي (الأعلى أولوية من المفعّلين)</option>
+            <option value="google">Gemini</option>
+            <option value="openai">ChatGPT</option>
+            <option value="anthropic">Claude</option>
+          </select>
+          <p class="form-note">عند فشل الوكيل يُنتقل تلقائياً للوكيل التالي حسب الأولوية، وعند فشل الجميع تُحوَّل المحادثة لموظف خدمة العملاء.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-agents-grid" id="aiAgentsGrid"><p class="muted">جارِ تحميل الوكلاء...</p></div>
+
+    <div class="card">
+      <div class="card-head-row"><div><h2>تعليمات الوكيل (AI Instructions)</h2><p class="form-note">تُطبَّق على كل الوكلاء. تُضاف تلقائياً قائمة الخدمات وبيانات التواصل من الموقع، وبيانات العميل المسجلة في المحادثة.</p></div></div>
+      <form id="aiInstructionsForm" class="dash-form">
+        <div class="form-field"><label for="ai-ins-systemPrompt">System Prompt</label><textarea id="ai-ins-systemPrompt" data-ins="systemPrompt" rows="10"></textarea></div>
+        <div class="form-grid">
+          <div class="form-field"><label for="ai-ins-welcomeMessage">رسالة الترحيب</label><textarea id="ai-ins-welcomeMessage" data-ins="welcomeMessage" rows="2"></textarea><p class="form-note">تظهر بعد "مرحباً {اسم الزائر}..." عند تفعيل أي وكيل.</p></div>
+          <div class="form-field"><label for="ai-ins-tone">الأسلوب (Tone)</label><textarea id="ai-ins-tone" data-ins="tone" rows="2"></textarea></div>
+          <div class="form-field"><label for="ai-ins-language">اللغة</label><textarea id="ai-ins-language" data-ins="language" rows="2"></textarea></div>
+          <div class="form-field"><label for="ai-ins-responseLength">طول الرد</label><textarea id="ai-ins-responseLength" data-ins="responseLength" rows="2"></textarea></div>
+        </div>
+        <div class="form-field"><label for="ai-ins-businessContext">معلومات الشركة (Business Context)</label><textarea id="ai-ins-businessContext" data-ins="businessContext" rows="6"></textarea></div>
+        <div class="form-grid">
+          <div class="form-field"><label for="ai-ins-forbiddenTopics">مواضيع ممنوعة</label><textarea id="ai-ins-forbiddenTopics" data-ins="forbiddenTopics" rows="4"></textarea></div>
+          <div class="form-field"><label for="ai-ins-escalationRules">قواعد التحويل إلى موظف</label><textarea id="ai-ins-escalationRules" data-ins="escalationRules" rows="4"></textarea></div>
+        </div>
+        <div class="form-field"><label for="ai-ins-serviceRules">قواعد خدمة العملاء وجمع البيانات</label><textarea id="ai-ins-serviceRules" data-ins="serviceRules" rows="5"></textarea></div>
+        <div class="form-grid">
+          <div class="form-field"><label for="ai-ins-handoffMessage">رسالة التحويل للعميل</label><textarea id="ai-ins-handoffMessage" data-ins="handoffMessage" rows="3"></textarea></div>
+          <div class="form-field"><label for="ai-ins-failureMessage">رسالة التعذر المؤقت</label><textarea id="ai-ins-failureMessage" data-ins="failureMessage" rows="3"></textarea><p class="form-note">تظهر للعميل عند فشل كل الوكلاء، دون ذكر أي مزود أو خطأ تقني.</p></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="submit" class="btn btn-dark">حفظ التعليمات</button>
+          <button type="button" class="btn btn-outline" id="aiInstructionsReset">استعادة التعليمات الافتراضية</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>تجربة الوكيل</h2>
+      <p class="form-note">أرسل رسالة كما يكتبها العميل لترى الرد وأي وكيل أجاب. تمر التجربة بنفس الترتيب والتحويل التلقائي.</p>
+      <form id="aiPreviewForm" class="ai-preview-form">
+        <input type="text" id="aiPreviewInput" maxlength="1000" placeholder="مثال: أرغب في بناء فيلا في جدة، كم يستغرق التنفيذ؟">
+        <button type="submit" class="btn btn-dark">إرسال</button>
+      </form>
+      <div id="aiPreviewResult" class="ai-preview-result" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============ الصيانة والميزات ============ -->
+  <section id="tab-settings" class="dash-panel">
+    <div class="card">
+      <h2>أمان حساب المطوّر</h2>
+      <form id="devPasswordForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field"><label for="dev-cp-current">كلمة المرور الحالية</label><input type="password" id="dev-cp-current" required minlength="12" autocomplete="current-password"></div>
+          <div class="form-field"><label for="dev-cp-new">كلمة المرور الجديدة</label><input type="password" id="dev-cp-new" required minlength="12" autocomplete="new-password"></div>
+        </div>
+        <button type="submit" class="btn btn-dark">تغيير كلمة المرور</button>
+        <p id="devCpMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>وضع الصيانة</h2>
+      <p class="form-note">عند التفعيل، يرى زوار الموقع العام صفحة صيانة بدل الموقع، بينما يبقى الدخول للوحة التحكم ومركز تحكم المطوّر ممكناً دائماً لإيقافها.</p>
+      <label class="dev-switch-label">
+        <input type="checkbox" id="maintenanceToggle">
+        تفعيل وضع الصيانة على الموقع العام
+      </label>
+      <div class="form-field" style="margin-top:14px;">
+        <label for="maintenanceMessageAr">رسالة الصيانة (عربي)</label>
+        <textarea id="maintenanceMessageAr" rows="2"></textarea>
+      </div>
+      <div class="form-field">
+        <label for="maintenanceMessageEn">Maintenance message (English)</label>
+        <textarea id="maintenanceMessageEn" rows="2"></textarea>
+      </div>
+      <button id="saveMaintenanceBtn" class="btn btn-dark btn-sm">حفظ إعدادات الصيانة</button>
+      <div id="maintenanceStatus" class="form-note"></div>
+    </div>
+
+    <div class="card">
+      <h2>الميزات التجريبية (Feature Flags)</h2>
+      <p class="form-note">بنية تحكم بالميزات — كل ميزة تجريبية تُفعَّل بشكل منفصل وموثَّق، وتبقى معطّلة افتراضياً حتى تُفعَّل عمداً.</p>
+      <div class="dev-flex-between" style="margin-bottom:10px;">
+        <input type="text" id="newFlagKey" placeholder="اسم الميزة (مثال: new_projects_layout)" style="flex:1;">
+        <button id="addFlagBtn" class="btn btn-outline btn-sm">إضافة/تحديث</button>
+      </div>
+      <div class="overview-list" id="featureFlagsList"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card" style="border-color: #dc3545; background: rgba(220, 53, 69, 0.05);">
+      <h2 style="color: #dc3545;">إعادة تعيين إعدادات مركز المطورين</h2>
+      <p class="form-note">سيؤدي هذا إلى حذف جميع حسابات المطورين والرجوع إلى صفحة الإعداد الأولية. لا يمكن التراجع عن هذا الإجراء.</p>
+      <button id="devResetSetupBtn" class="btn btn-danger">إعادة تعيين الإعدادات</button>
+      <p id="devResetSetupMessage" class="form-note"></p>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/dev-center.js" data-page="developer-center"></script>
+</body>
+</html>

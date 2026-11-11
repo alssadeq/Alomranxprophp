@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم العمران</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<script>
+  // الوضع الفاتح افتراضي؛ الوضع الداكن يُحفظ في هذا الجهاز ويُطبَّق قبل ظهور الصفحة
+  try { if (localStorage.getItem('dash-theme') === 'dark') document.body.setAttribute('data-theme', 'dark'); } catch (e) {}
+</script>
+
+<header class="dash-header">
+  <div class="dash-header-inner">
+    <div class="dash-header-actions">
+      <div class="bell-wrap user-wrap">
+        <button type="button" id="userMenuBtn" class="bell-btn" aria-haspopup="true" aria-expanded="false" aria-controls="userMenu" aria-label="حسابي" title="حسابي">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </button>
+        <div id="userMenu" class="bell-panel user-menu" hidden>
+          <div class="user-menu-head">
+            <span class="user-menu-avatar" id="userMenuAvatar" aria-hidden="true">؟</span>
+            <div>
+              <strong id="currentUserLabel" class="dash-user-name">...</strong>
+              <small id="userMenuRole"></small>
+              <small id="userMenuEmail" dir="ltr"></small>
+            </div>
+          </div>
+          <div class="user-menu-actions">
+            <button type="button" id="userMenuAccount" class="user-menu-item">بيانات حسابي وكلمة المرور</button>
+            <a href="/" target="_blank" rel="noopener" class="user-menu-item">فتح الموقع</a>
+            <button type="button" id="userMenuLogout" class="user-menu-item danger">تسجيل الخروج</button>
+          </div>
+        </div>
+      </div>
+      <div class="bell-wrap">
+        <button type="button" id="bellBtn" class="bell-btn" aria-haspopup="true" aria-expanded="false" aria-controls="bellPanel" aria-label="الإشعارات">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span id="bellCount" class="bell-count" hidden>0</span>
+        </button>
+        <div id="bellPanel" class="bell-panel" hidden>
+          <div class="bell-head">
+            <strong>الإشعارات</strong>
+            <span class="bell-head-actions">
+              <button type="button" id="bellSoundBtn" class="bell-link" aria-pressed="true"></button>
+              <button type="button" id="bellReadAll" class="bell-link">تعليم الكل كمقروء</button>
+            </span>
+          </div>
+          <div id="bellList" class="bell-list" role="list"><p class="muted">لا توجد إشعارات بعد.</p></div>
+        </div>
+      </div>
+      <button type="button" id="themeToggle" class="bell-btn theme-toggle" aria-label="الوضع الداكن" title="الوضع الداكن">
+        <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <a href="/" class="bell-btn" target="_blank" rel="noopener" aria-label="العودة للموقع" title="العودة للموقع">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+      </a>
+      <button type="button" id="logoutBtn" class="bell-btn" aria-label="تسجيل الخروج" title="تسجيل الخروج">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>
+      </button>
+      <span class="dash-header-logo" id="dashHeaderLogo" aria-hidden="true"></span>
+    </div>
+    <div class="dash-user-box">
+      <span class="dash-header-date" id="dashHeaderDate"></span>
+    </div>
+  </div>
+</header>
+
+<div class="dash-shell">
+  <aside class="dash-sidebar" id="dashSidebar">
+    <!-- على الجوال: زر يعرض القسم الحالي ويفتح قائمة الأقسام -->
+    <button type="button" class="dash-nav-toggle" id="dashNavToggle" aria-expanded="false" aria-controls="dashTabsNav">
+      <span class="dash-nav-toggle-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+      <span class="dash-nav-toggle-label" id="dashNavToggleLabel">نظرة عامة</span>
+      <span class="dash-nav-toggle-badge" id="dashNavToggleBadge" hidden></span>
+      <svg class="dash-nav-toggle-caret" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="dash-sidebar-brand"><strong>العمران</strong><span>لوحة التحكم</span></div>
+    <nav class="dash-tabs" id="dashTabsNav" role="tablist">
+      <button class="dash-tab is-active" data-tab="overview" role="tab">نظرة عامة</button>
+      <div class="nav-group-label">الأعمال</div>
+      <button class="dash-tab" data-tab="works" role="tab">الأعمال</button>
+      <button class="dash-tab" data-tab="messages" role="tab">الرسائل</button>
+      <button class="dash-tab" data-tab="chat" role="tab">المحادثات</button>
+      <button class="dash-tab" data-tab="briefs" role="tab">طلبات المشاريع</button>
+      <button class="dash-tab" data-tab="customers" role="tab">العملاء</button>
+      <button class="dash-tab" data-tab="reviews" role="tab">التقييمات <span class="tab-count" id="reviewsPendingCount" hidden></span></button>
+      <div class="nav-group-label">المحتوى والهوية</div>
+      <button class="dash-tab" data-tab="identity" role="tab">الهوية والمظهر</button>
+      <button class="dash-tab" data-tab="sections" role="tab">أقسام الصفحات</button>
+      <button class="dash-tab" data-tab="social" role="tab">وسائل التواصل</button>
+      <div class="nav-group-label">الإدارة</div>
+      <button class="dash-tab" data-tab="activity" role="tab">سجل النشاط</button>
+      <button class="dash-tab hidden" data-tab="notifications" role="tab">الإشعارات</button>
+      <button class="dash-tab" data-tab="account" role="tab">الحساب والمستخدمين</button>
+    </nav>
+  </aside>
+
+<main class="dash-main">
+  <h1 class="dash-page-title" id="dashPageTitle">نظرة عامة</h1>
+
+  <!-- ============ تبويب الأعمال ============ -->
+  <!-- ============ تبويب نظرة عامة ============ -->
+  <section id="tab-overview" class="dash-panel is-active">
+
+    <div class="overview-stats-grid">
+      <div class="overview-stat-card">
+        <span class="overview-stat-icon">🏗️</span>
+        <span class="overview-stat-num" id="ov-works">–</span>
+        <span class="overview-stat-label">الأعمال</span>
+      </div>
+      <div class="overview-stat-card">
+        <span class="overview-stat-icon">🧩</span>
+        <span class="overview-stat-num" id="ov-services">–</span>
+        <span class="overview-stat-label">الخدمات</span>
+      </div>
+      <div class="overview-stat-card">
+        <span class="overview-stat-icon">🖼️</span>
+        <span class="overview-stat-num" id="ov-banners">–</span>
+        <span class="overview-stat-label">البانرات</span>
+      </div>
+      <div class="overview-stat-card">
+        <span class="overview-stat-icon">💬</span>
+        <span class="overview-stat-num" id="ov-messages">–</span>
+        <span class="overview-stat-label">الرسائل</span>
+      </div>
+      <div class="overview-stat-card">
+        <span class="overview-stat-icon">👥</span>
+        <span class="overview-stat-num" id="ov-users">–</span>
+        <span class="overview-stat-label">المستخدمون</span>
+      </div>
+    </div>
+
+    <div class="overview-cols">
+      <div class="card">
+        <h2>آخر الأعمال المضافة</h2>
+        <div id="ov-recent-works" class="overview-list">
+          <p class="muted">جارِ التحميل...</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>آخر الرسائل الواردة</h2>
+        <div id="ov-recent-messages" class="overview-list">
+          <p class="muted">جارِ التحميل...</p>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <section id="tab-works" class="dash-panel">
+
+    <div id="addWorkCard" class="card">
+      <h2>إضافة عمل جديد</h2>
+      <form id="addWorkForm" class="dash-form">
+        <div class="form-grid">
+          <div class="bi-field">
+            <label>اسم المشروع</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-title-ar" required></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-title-en" placeholder="Project name in English"></div>
+          </div>
+          <div class="bi-field">
+            <label>المدينة</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-city-ar" required></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-city-en" placeholder="City in English"></div>
+          </div>
+          <div class="form-field">
+            <label for="w-category">التصنيف</label>
+            <select id="w-category" required>
+              <option value="residential">سكني</option>
+              <option value="commercial">تجاري</option>
+              <option value="industrial">صناعي</option>
+            </select>
+          </div>
+          <div class="bi-field">
+            <label>وصف مختصر</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-meta-ar" placeholder="مثال: تسليم مفتاح"></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-meta-en" placeholder="e.g. Turnkey delivery"></div>
+          </div>
+          <div class="bi-field">
+            <label>المساحة</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-area-ar" placeholder="مثال: 520 م²"></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-area-en" placeholder="e.g. 520 sqm"></div>
+          </div>
+        </div>
+        <div class="bi-field" style="margin-top:6px;">
+          <label>وصف تفصيلي (يظهر عند تصفح صور المشروع)</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><textarea id="w-description-ar" rows="3" placeholder="وصف أطول للمشروع يظهر مع الاسم عند فتح صوره بشكل استديو"></textarea></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="w-description-en" rows="3" placeholder="Longer project description shown in the studio image viewer"></textarea></div>
+        </div>
+        <div class="form-field" style="margin-top:6px;">
+          <label for="w-images">صور المشروع (اختياري، بدون حد أقصى لعددها)</label>
+          <input type="file" id="w-images" accept="image/png,image/jpeg,image/webp" multiple>
+          <p class="size-hint">📐 المقاس المقترح: أفقية 1600 × 1200 بكسل (4:3)</p>
+        </div>
+        <button type="submit" class="btn btn-sand">إضافة العمل</button>
+        <p class="form-note">* الحقل الإنجليزي اختياري؛ إذا تُرك فارغاً، يُعرض النص العربي حتى للزوار الذين يختارون اللغة الإنجليزية. * إذا اخترت صوراً، تُرفع تلقائياً فور حفظ العمل.</p>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row">
+        <h2>إدارة الأعمال</h2>
+        <span id="pinnedCount" class="pinned-count"></span>
+      </div>
+      <div id="worksList" class="works-list">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب الهوية والمظهر ============ -->
+  <section id="tab-identity" class="dash-panel">
+
+    <div class="card">
+      <h2>الخطوط</h2>
+      <p class="form-note">اختر خطاً لكل جزء من الموقع من مكتبة الخطوط، أو اكتب اسم خط آخر. الخطوط التي لا تدعم العربية تُكمل حروفها العربية تلقائياً بخط IBM Plex Sans Arabic.</p>
+
+      <h3 class="typo-subtitle">مكتبة الخطوط</h3>
+      <div class="font-library" id="fontLibrary"></div>
+
+      <h3 class="typo-subtitle">تخصيص الخطوط</h3>
+      <div class="form-grid typo-roles">
+        <div class="form-field">
+          <label for="fontRole-heading">العناوين الرئيسية</label>
+          <select id="fontRole-heading" data-font-role="heading"></select>
+          <input type="text" class="typo-custom" data-custom-for="heading" maxlength="60" placeholder="اسم الخط، مثال: Cairo" hidden>
+        </div>
+        <div class="form-field">
+          <label for="fontRole-subheading">العناوين الثانوية</label>
+          <select id="fontRole-subheading" data-font-role="subheading"></select>
+          <input type="text" class="typo-custom" data-custom-for="subheading" maxlength="60" placeholder="اسم الخط، مثال: Cairo" hidden>
+        </div>
+        <div class="form-field">
+          <label for="fontRole-body">المحتوى</label>
+          <select id="fontRole-body" data-font-role="body"></select>
+          <input type="text" class="typo-custom" data-custom-for="body" maxlength="60" placeholder="اسم الخط، مثال: Cairo" hidden>
+        </div>
+        <div class="form-field">
+          <label for="fontRole-buttons">الأزرار</label>
+          <select id="fontRole-buttons" data-font-role="buttons"></select>
+          <input type="text" class="typo-custom" data-custom-for="buttons" maxlength="60" placeholder="اسم الخط، مثال: Cairo" hidden>
+        </div>
+      </div>
+      <p class="form-note">الخط المخصص يجب أن يكون مثبّتاً بجهاز الزائر أو محمّلاً بالموقع، وإلا يستخدم المتصفح الخط الاحتياطي.</p>
+
+      <h3 class="typo-subtitle">أحجام الخطوط</h3>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="fontSizeH1">حجم العنوان الرئيسي (px)</label>
+          <input type="number" id="fontSizeH1" min="10" max="200" placeholder="افتراضي">
+        </div>
+        <div class="form-field">
+          <label for="fontSizeH2">حجم العنوان الثانوي (px)</label>
+          <input type="number" id="fontSizeH2" min="10" max="200" placeholder="افتراضي">
+        </div>
+        <div class="form-field">
+          <label for="fontSizeBody">حجم المحتوى (px)</label>
+          <input type="number" id="fontSizeBody" min="10" max="200" placeholder="افتراضي">
+        </div>
+      </div>
+      <p class="form-note">اترك أي حقل فارغاً للإبقاء على الحجم الافتراضي المصمَّم بالموقع. على الجوال لا تتجاوز العناوين عرض الشاشة.</p>
+
+      <h3 class="typo-subtitle">معاينة</h3>
+      <div class="typo-preview" id="typoPreview" dir="rtl">
+        <div class="typo-preview-h1">نبني بثقة.. من الفكرة إلى التسليم</div>
+        <div class="typo-preview-h2">حلول بناء متكاملة تحت سقف واحد</div>
+        <p class="typo-preview-body">شركة سعودية متخصصة في تنفيذ وإدارة المشاريع السكنية والتجارية والصناعية. Alomran 2026</p>
+        <span class="typo-preview-btn">اطلب عرض سعر</span>
+      </div>
+
+      <button type="button" id="saveTypographyBtn" class="btn btn-sand" style="margin-top:14px;">حفظ إعدادات الخطوط</button>
+      <p id="typographyMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>الشعار وأيقونة العنوان</h2>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>الشعار (يظهر في رأس الموقع)</label>
+          <div class="identity-preview" id="logoPreview">لا يوجد شعار مرفوع بعد</div>
+          <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: PNG بخلفية شفافة، مربع 512 × 512 أو أفقي 600 × 200 بكسل</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="logo">رفع الشعار</button>
+        </div>
+        <div class="identity-item">
+          <label>أيقونة العنوان (Favicon)</label>
+          <div class="identity-preview" id="faviconPreview">لا توجد أيقونة مرفوعة بعد</div>
+          <input type="file" id="faviconFile" accept="image/png,image/x-icon,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: مربع 512 × 512 بكسل (PNG)</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="favicon">رفع الأيقونة</button>
+        </div>
+      </div>
+      <p id="identityMessage" class="form-note"></p>
+    </div>
+
+    <div class="card" id="shareCard">
+      <h2>بطاقة مشاركة الرابط</h2>
+      <p class="form-note">الصورة والعنوان والرسالة الترحيبية التي تظهر عند مشاركة رابط الموقع في واتساب وتويتر وسناب وغيرها.</p>
+      <div class="share-layout">
+        <div class="share-fields">
+          <label>صورة المشاركة</label>
+          <input type="file" id="shareImageFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: أفقي 1200 × 630 بكسل (JPG). ضع الشعار والنص في المنتصف، فبعض التطبيقات تقص الأطراف وتعرضها مربعة.</p>
+          <div class="share-actions">
+            <button type="button" class="btn btn-dark btn-sm" id="shareImageUploadBtn">رفع الصورة</button>
+            <button type="button" class="btn btn-outline btn-sm" id="shareImageResetBtn">استعادة الصورة الافتراضية</button>
+          </div>
+          <label style="margin-top:14px;">العنوان</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="shareTitle-ar" maxlength="120"></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="shareTitle-en" maxlength="120" dir="ltr" placeholder="Title in English"></div>
+          <label style="margin-top:10px;">الرسالة الترحيبية (الوصف)</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><textarea id="shareDesc-ar" rows="3" maxlength="300"></textarea></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="shareDesc-en" rows="3" maxlength="300" dir="ltr" placeholder="Welcome message in English"></textarea></div>
+          <button type="button" class="btn btn-sand" id="saveShareBtn" style="margin-top:10px;">حفظ بطاقة المشاركة</button>
+        </div>
+        <div class="share-preview-wrap">
+          <label>معاينة تقريبية</label>
+          <div class="share-preview">
+            <img id="sharePreviewImg" src="/images/share-card.jpg" alt="">
+            <div class="share-preview-body">
+              <strong id="sharePreviewTitle"></strong>
+              <span id="sharePreviewDesc"></span>
+              <small id="sharePreviewHost"></small>
+            </div>
+          </div>
+          <p class="form-note">ملاحظة: واتساب وغيره يحفظون البطاقة القديمة للرابط فترة. لرؤية التحديث فوراً جرّب مشاركة الرابط مع إضافة <code>?v=2</code> في آخره.</p>
+        </div>
+      </div>
+      <p id="shareMessage" class="form-note"></p>
+    </div>
+
+    <div class="card" id="loginButtonCard">
+      <h2>زر تسجيل دخول الموظفين في الموقع</h2>
+      <p class="form-note">الأيقونة الصغيرة في رأس الموقع التي تفتح صفحة تسجيل الدخول. إخفاؤها لا يمنع الدخول: تبقى صفحة الدخول متاحة لك ولفريقك من الرابط المباشر <code dir="ltr">/login</code>.</p>
+      <label class="perm-check"><input type="checkbox" id="loginBtnDesktop" checked> إظهار الزر على الكمبيوتر</label>
+      <label class="perm-check"><input type="checkbox" id="loginBtnMobile" checked> إظهار الزر على الجوال</label>
+      <p id="loginButtonMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>شعار بطاقات المشاريع</h2>
+      <p class="form-note">شعار مستقل تماماً عن شعار رأس الموقع، يظهر كعلامة صغيرة شفافة الخلفية أعلى يسار صورة كل مشروع.</p>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>شعار بطاقة المشروع</label>
+          <div class="identity-preview" id="projectLogoPreview">لا يوجد شعار مرفوع بعد</div>
+          <input type="file" id="projectLogoFile" accept="image/png,image/webp,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، مربع 400 × 400 بكسل</p>
+          <button type="button" class="btn btn-dark btn-sm" id="projectLogoUploadBtn">رفع الشعار</button>
+        </div>
+        <div class="identity-item">
+          <label class="perm-check"><input type="checkbox" id="projectLogoVisible"> إظهار الشعار في بطاقات المشاريع</label>
+        </div>
+      </div>
+      <p id="projectLogoMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>شعار ونص البانر الرئيسي</h2>
+      <p class="form-note">شعار مستقل عن شعار رأس الموقع وشعار بطاقات المشاريع، يظهر في منتصف البانر من جهة اليسار. النص (العربي/الإنجليزي) يُحرَّر لكل بانر على حدة بالأسفل.</p>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>شعار البانر</label>
+          <div class="identity-preview" id="bannerLogoPreview">لا يوجد شعار مرفوع بعد</div>
+          <input type="file" id="bannerLogoFile" accept="image/png,image/webp,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، 600 × 600 أو أفقي 800 × 300 بكسل</p>
+          <button type="button" class="btn btn-dark btn-sm" id="bannerLogoUploadBtn">رفع شعار البانر</button>
+        </div>
+        <div class="identity-item">
+          <label class="perm-check"><input type="checkbox" id="bannerLogoVisible"> إظهار الشعار في البانر</label>
+          <label class="perm-check"><input type="checkbox" id="bannerTextVisible"> إظهار النص (العربي/الإنجليزي) في البانر</label>
+        </div>
+      </div>
+      <p id="bannerLogoMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>البانرات (الصفحة الرئيسية — حتى 5 بانرات)</h2>
+      <p class="form-note">تتبدل البانرات تلقائياً كل 3 ثوانٍ في الصفحة الرئيسية. يمكن إضافة رابط لكل بانر، فيُنقل الزائر إليه عند الضغط على البانر.</p>
+      <p class="size-hint">📐 المقاس المقترح: 1920 × 1080 بكسل (16:9). على الجوال تظهر الصورة كاملة، وعلى الكمبيوتر يُقص جزء من أعلاها وأسفلها، فضع النصوص والشعار في الشريط الأوسط (بين الارتفاع 220 و 860 تقريباً).</p>
+      <div id="bannersEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>خلفيات رأس الصفحات</h2>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>خلفية رأس صفحة "من نحن"</label>
+          <div class="identity-preview" id="aboutBgPreview">لا توجد خلفية مرفوعة بعد</div>
+          <input type="file" id="aboutBgFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="about">رفع الخلفية</button>
+        </div>
+        <div class="identity-item">
+          <label>خلفية رأس صفحة "مشاريعنا"</label>
+          <div class="identity-preview" id="projectsBgPreview">لا توجد خلفية مرفوعة بعد</div>
+          <input type="file" id="projectsBgFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="projects">رفع الخلفية</button>
+        </div>
+      </div>
+      <p id="bgMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>روابط التواصل الاجتماعي</h2>
+      <p class="form-note">إدارة كاملة لكل منصات التواصل (إضافة/تعديل/حذف، تخصيص شكل كل أيقونة، ترتيبها، ومكان ظهورها) صارت في تبويب مستقل: <strong>"وسائل التواصل"</strong> بأعلى الصفحة.</p>
+    </div>
+
+    <div class="card">
+      <h2>إحصاءات الصفحة الرئيسية</h2>
+      <p class="form-note">الأرقام الظاهرة في الشريط الكحلي وصندوق الإحصاءات بالصفحة الرئيسية وصفحة "من نحن".</p>
+      <form id="statsForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="stat-years">سنوات الخبرة</label>
+            <input type="text" id="stat-years" placeholder="15+">
+          </div>
+          <div class="form-field">
+            <label for="stat-projects">المشاريع المنجزة</label>
+            <input type="text" id="stat-projects" placeholder="120+">
+          </div>
+          <div class="form-field">
+            <label for="stat-cities">المناطق التي نخدمها</label>
+            <input type="text" id="stat-cities" placeholder="13">
+          </div>
+          <div class="form-field">
+            <label for="stat-satisfaction">نسبة رضا العملاء</label>
+            <input type="text" id="stat-satisfaction" placeholder="98%">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-sand">حفظ الإحصاءات</button>
+        <p id="statsMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>الخدمات (الصفحة الرئيسية)</h2>
+      <p class="form-note">أضف أو عدّل أو احذف الخدمات الظاهرة بالصفحة الرئيسية.</p>
+      <div id="servicesEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+      <button type="button" id="addServiceBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة خدمة جديدة</button>
+      <p id="servicesMessage" class="form-note"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="licenses">
+      <h2>صفحة "من نحن": الشهادات والتراخيص</h2>
+      <p class="form-note">صور السجل التجاري، شهادة تصنيف المقاولين، الرخص البلدية، شهادات الجودة... مع عنوان ووصف (مثل الجهة المانحة أو رقم الترخيص) ورابط اختياري للتحقق. يظهر القسم في صفحة "من نحن" عند وجود عنصر ظاهر واحد على الأقل، ويمكن إخفاؤه وترتيبه من «أقسام الصفحات».</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو ترخيص</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشهادات والتراخيص</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="awards">
+      <h2>صفحة "من نحن": التكريم والشكر والتقدير</h2>
+      <p class="form-note">شهادات التكريم والجوائز من الجهات الرسمية، وخطابات الشكر والتقدير من العملاء. اختر نوع كل شهادة: لـ«شكر من عميل» اكتب اسم العميل أو الجهة في الوصف (يظهر «من: …») واسم المشروع. عند وجود النوعين تظهر في الموقع أزرار تصفية (الكل / تكريم / شكر العملاء). يُفضّل أخذ موافقة العميل قبل نشر خطابه.</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو خطاب شكر</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ التكريم والشكر</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="partners">
+      <h2>صفحة "من نحن": شركاؤنا</h2>
+      <p class="form-note">اسم الشريك وشعاره، مع رابط اختياري لموقعه. تظهر الشعارات بالرمادي وتتلوّن عند تمرير الماوس.</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شريك</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشركاء</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card">
+      <h2>فريق العمل (صفحة "من نحن")</h2>
+      <p class="form-note">أضف أو عدّل أو احذف أعضاء فريق العمل الظاهرين بصفحة "من نحن".</p>
+      <div id="teamEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+      <button type="button" id="addTeamMemberBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة عضو جديد</button>
+      <p id="teamMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>رسالة الترحيب عند أول زيارة</h2>
+      <p class="form-note">تظهر مرة واحدة فقط لكل زائر جديد للموقع (لا تتكرر له بعد إغلاقها أول مرة).</p>
+      <form id="welcomeForm" class="dash-form">
+        <label class="perm-check"><input type="checkbox" id="welcomeEnabled"> تفعيل رسالة الترحيب</label>
+        <div class="bi-field">
+          <label>العنوان</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="welcomeTitle-ar" placeholder="أهلاً بك في العمران الذهبية"></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="welcomeTitle-en" placeholder="Welcome to Alomran"></div>
+        </div>
+        <div class="bi-field">
+          <label>نص الرسالة</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><textarea id="welcomeMessageText-ar" rows="3" placeholder="نبني بثقة.. من الفكرة إلى التسليم."></textarea></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="welcomeMessageText-en" rows="3" placeholder="We build with trust.."></textarea></div>
+        </div>
+        <div class="bi-field">
+          <label>نص الزر</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="welcomeButtonText-ar" placeholder="استعرض الموقع"></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="welcomeButtonText-en" placeholder="Browse the site"></div>
+        </div>
+        <div class="form-field">
+          <label for="welcomeDuration">مدة الظهور (بالثواني)</label>
+          <input type="number" id="welcomeDuration" min="1" max="60" placeholder="6">
+          <p class="form-note" style="margin-top:4px;">تختفي الرسالة تلقائياً بعد هذه المدة، ويمكن للزائر إغلاقها يدوياً في أي وقت قبل ذلك.</p>
+        </div>
+        <button type="submit" class="btn btn-sand">حفظ رسالة الترحيب</button>
+        <p id="welcomeMessage2" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>نص الفوتر (مشترك في كل صفحات الموقع)</h2>
+      <p class="form-note">الفقرة التعريفية أسفل شعار الشركة في تذييل كل صفحة (الرئيسية، من نحن، مشاريعنا، صفحة تفاصيل المشروع).</p>
+      <form id="footerForm" class="dash-form">
+        <div class="bi-field">
+          <label>نص التعريف بالشركة</label>
+          <div class="bi-row"><span class="bi-badge">AR</span><textarea id="footerTagline-ar" rows="2"></textarea></div>
+          <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="footerTagline-en" rows="2"></textarea></div>
+        </div>
+        <button type="submit" class="btn btn-sand">حفظ نص الفوتر</button>
+        <p id="footerMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>موقع الشركة على الخريطة</h2>
+      <p class="form-note">الخريطة المصغرة في قسم "تواصل معنا" بالصفحة الرئيسية. عند الضغط عليها يُفتح الرابط أدناه.</p>
+      <form id="mapForm" class="dash-form">
+        <div class="form-field">
+          <label for="mapUrl">رابط الموقع في خرائط جوجل</label>
+          <input id="mapUrl" type="url" dir="ltr" maxlength="800" placeholder="https://www.google.com/maps/place/...">
+          <p class="form-note">من تطبيق أو موقع خرائط جوجل: افتح موقع الشركة ← مشاركة ← نسخ الرابط، ثم الصقه هنا.</p>
+        </div>
+        <div class="form-field">
+          <label for="mapCoords">الإحداثيات (اختياري)</label>
+          <input id="mapCoords" type="text" dir="ltr" maxlength="60" placeholder="21.5093, 39.1708">
+          <p class="form-note">لتحريك الخريطة المصغرة إلى موقعك. إذا نسخت الرابط الكامل من متصفح الكمبيوتر (يحتوي على ‎@‎ ثم أرقام) تُقرأ الإحداثيات منه تلقائياً، أما الروابط المختصرة (maps.app.goo.gl) فتحتاج كتابة الإحداثيات هنا: اضغط مطولاً على الموقع في خرائط جوجل وانسخ الأرقام التي تظهر.</p>
+        </div>
+        <button type="submit" class="btn btn-sand">حفظ موقع الخريطة</button>
+        <p id="mapMessage" class="form-note"></p>
+      </form>
+    </div>
+
+  </section>
+
+  <!-- ============ تبويب أقسام الصفحات ============ -->
+  <section id="tab-sections" class="dash-panel">
+    <div class="card">
+      <h2>تخصيص أقسام الموقع</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان (الخلفية، البطاقات، النص)، المحتوى، الصورة، والتأثير التفاعلي. اضغط على أي قسم لفتحه، فعّل/عطّل ظهوره من المربع مباشرة، أو اسحبه من ⋮⋮ لإعادة ترتيب الأقسام بالصفحة.</p>
+      <div class="page-switcher" id="sectionsPageSwitcher">
+        <button type="button" class="is-active" data-page="home">الرئيسية</button>
+        <button type="button" data-page="about">من نحن</button>
+        <button type="button" data-page="projects">مشاريعنا</button>
+      </div>
+    </div>
+    <div id="sectionsEditor"></div>
+  </section>
+
+  <!-- ============ تبويب وسائل التواصل ============ -->
+  <section id="tab-social" class="dash-panel">
+
+    <div class="card">
+      <div class="card-head-row">
+        <h2>منصات التواصل الاجتماعي</h2>
+        <span class="pinned-count" id="socialCount"></span>
+      </div>
+      <p class="form-note">أضف منصاتك، خصّص شكل كل أيقونة، وحدّد أين تظهر (الهيدر/الفوتر) وعلى أي جهاز (كمبيوتر/جوال). اسحب أي بطاقة لإعادة ترتيبها.</p>
+      <div class="social-toolbar">
+        <input type="text" id="socialSearch" placeholder="🔍 ابحث عن منصة بالاسم...">
+        <button type="button" id="addSocialBtn" class="btn btn-sand">+ إضافة منصة جديدة</button>
+        <button type="button" id="exportSocialBtn" class="btn btn-outline btn-sm">تصدير نسخة احتياطية</button>
+        <button type="button" id="importSocialBtn" class="btn btn-outline btn-sm">استيراد نسخة احتياطية</button>
+        <input type="file" id="importSocialFile" accept="application/json" style="display:none;">
+      </div>
+      <div id="socialList" class="social-list">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ تبويب محتوى الصفحات ============ -->
+
+  <!-- ============ تبويب سجل النشاط ============ -->
+  <section id="tab-activity" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>سجل النشاط</h2>
+        <button type="button" id="refreshActivityBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <p class="form-note">آخر العمليات المهمة على لوحة التحكم (الإضافة، التعديل، الحذف) مع اسم المستخدم والوقت. يُحتفظ بآخر 500 عملية فقط.</p>
+      <div id="activityLogList" class="overview-list" style="margin-top:14px;">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب الحساب والمستخدمين ============ -->
+  <!-- ============ تبويب الرسائل ============ -->
+  <section id="tab-chat" class="dash-panel">
+    <div class="card"><div class="card-head-row"><h2>مركز المحادثات</h2><div class="chat-head-tools"><span id="chatStaffOnline" class="chat-staff-online"></span><button id="chatRefreshBtn" class="btn btn-outline btn-sm">تحديث</button></div></div><div class="overview-stats-grid" id="chatAnalytics"></div></div>
+    <div class="card chat-desk">
+      <div class="chat-desk-list">
+        <div class="chat-desk-filters" role="tablist" aria-label="تصفية المحادثات">
+          <button type="button" class="is-active" data-chat-filter="active">النشطة</button>
+          <button type="button" data-chat-filter="mine">محادثاتي</button>
+          <button type="button" data-chat-filter="all">الكل</button>
+        </div>
+        <div id="chatAdminList" class="chat-desk-items"><p class="muted">جارِ التحميل...</p></div>
+      </div>
+      <div class="chat-desk-view" id="chatDeskView"><p class="muted chat-desk-empty">اختر محادثة من القائمة لعرضها والرد عليها.</p></div>
+    </div>
+    <div class="card" id="chatSettingsCard"><h2>إعدادات المحادثة</h2><p class="form-note">التحكم في القنوات والذكاء الاصطناعي والرسائل السريعة وظهور زر التواصل دون تغيير هوية الموقع.</p><div class="form-grid"><label class="dev-switch-label"><input id="chatEnabled" type="checkbox"> تشغيل المحادثة</label><label class="dev-switch-label"><input id="chatAiEnabled" type="checkbox"> تشغيل الذكاء الاصطناعي</label><label class="dev-switch-label"><input id="chatHumanEnabled" type="checkbox"> خدمة العملاء</label><label class="dev-switch-label"><input id="chatWhatsappEnabled" type="checkbox"> واتساب</label><label class="dev-switch-label"><input id="chatCallEnabled" type="checkbox"> الاتصال</label></div><div class="form-grid"><div class="form-field"><label>اسم المساعد</label><input id="chatAssistantName"></div><div class="form-field"><label>رقم الاتصال</label><input id="chatPhone" inputmode="tel"></div><div class="form-field"><label>رقم واتساب</label><input id="chatWhatsapp" inputmode="tel"></div><div class="form-field"><label>رسالة الترحيب</label><textarea id="chatWelcome" rows="3"></textarea><p class="form-note">تظهر تحت التحية الثابتة: «مرحباً [اسم الزائر] في العمران الذهبية للمقاولات العامة». اتركها فارغة للاكتفاء بالتحية.</p></div><div class="form-field"><label>رسالة خارج أوقات العمل</label><textarea id="chatOffline" rows="3"></textarea></div></div><div class="form-field"><label>رسالة عدم توفر موظف</label><textarea id="chatUnavailable" rows="3" placeholder="نعتذر منك، موظفو خدمة العملاء مشغولون في الوقت الحالي. يمكنك التواصل معنا مباشرة عبر واتساب..."></textarea><p class="form-note">تظهر للعميل مع زر واتساب عندما يطلب التحدث مع موظف ولا يوجد موظف متصل بلوحة التحكم لديه صلاحية الرد. اتركها فارغة لاستخدام الرسالة الافتراضية.</p></div>
+      <div class="form-field"><label>اقتراحات المحادثة وردودها التلقائية</label><p class="form-note">تظهر كأزرار أسفل المحادثة. عند الضغط عليها يظهر الرد التلقائي فوراً. اترك الرد فارغاً لاستخدام الرد الافتراضي لنوع الاقتراح (مثلاً «خدماتنا» يعرض قائمة الخدمات من الموقع، و«واتساب» يعرض زراً لفتح واتساب). اقتراح من نوع «رسالة» بدون رد يُرسل للمساعد الذكي.</p><div id="chatQrList" class="qr-list"></div><button type="button" id="chatQrAdd" class="btn btn-outline btn-sm">+ إضافة اقتراح</button></div>
+      <div class="form-field"><label>الردود الجاهزة</label><p class="form-note">إذا كتب العميل رسالة قصيرة تحتوي على إحدى الكلمات (مثل «السلام عليكم» أو «شكراً») يُرسل له الرد المحدد فوراً. افصل بين الكلمات بفاصلة. لا يهم وجود التشكيل أو اختلاف الهمزات، وتُطابق الكلمات كاملة فقط (فكلمة «سلام» لا تُطابق «استلام»).</p><div id="chatCannedList" class="qr-list"></div><button type="button" id="chatCannedAdd" class="btn btn-outline btn-sm">+ إضافة رد جاهز</button></div><button id="saveChatSettingsBtn" class="btn btn-dark">حفظ إعدادات المحادثة</button><p id="chatSettingsMsg" class="form-note"></p></div>
+  </section>
+
+  <!-- ============ تبويب التقييمات ============ -->
+  <section id="tab-reviews" class="dash-panel">
+    <div class="card">
+      <h2>طلب تقييم جديد</h2>
+      <p class="form-note">نموذج التقييم لا يظهر في الموقع لأي زائر. اكتب بيانات العميل ثم اختر طريقة الإرسال: <b>عبر الواتساب</b> (يفتح واتساب برسالة الدعوة جاهزة لرقم العميل) أو <b>عبر الإيميل</b> (يُرسل من بريد الشركة المضبوط أدناه). يقيّم العميل مرة واحدة فقط. يصلك التقييم هنا بانتظار موافقتك قبل ظهوره في قسم «ماذا يقول عنا عملاؤنا».</p>
+      <form id="reviewInviteForm" class="rvd-form" autocomplete="off">
+        <label>اسم العميل *<input type="text" id="ri-name" maxlength="80" required placeholder="اسم العميل الكامل"></label>
+        <label>المشروع<input type="text" id="ri-project" maxlength="120" placeholder="مثال: فيلا سكنية – حي النرجس"></label>
+        <label>جوال العميل (للواتساب)<input type="tel" id="ri-phone" maxlength="20" dir="ltr" placeholder="05xxxxxxxx"></label>
+        <label>البريد الإلكتروني<input type="email" id="ri-email" maxlength="254" dir="ltr" placeholder="client@example.com"></label>
+        <div class="rvd-form-send">
+          <button type="button" class="btn rvd-wa rvd-send-btn" data-send="whatsapp">إرسال الدعوة عبر الواتساب</button>
+          <button type="button" class="btn btn-sand rvd-send-btn" data-send="email">✉️ إرسال الدعوة عبر الإيميل</button>
+          <button type="button" class="btn btn-outline btn-sm" data-send="link">إنشاء الرابط فقط</button>
+        </div>
+      </form>
+      <p id="reviewInviteMessage" class="form-note"></p>
+      <div id="reviewInviteResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row">
+        <h2>التقييمات وطلبات التقييم</h2>
+        <button type="button" id="reviewsRefreshBtn" class="btn btn-outline btn-sm">تحديث</button>
+      </div>
+      <div class="overview-stats-grid" id="reviewsStats"></div>
+      <div class="rvd-filters" id="reviewsFilters" role="tablist"></div>
+      <p id="reviewsMessage" class="form-note"></p>
+      <div id="reviewsList" class="rvd-list"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card" id="testimonialsCard">
+      <h2>آراء العملاء الظاهرة في الموقع (ماذا يقول عنا عملاؤنا)</h2>
+      <p class="form-note">قسم في الصفحة الرئيسية يعرض تقييمات العملاء بالنجوم. أضف آراء حقيقية من عملائك (يُفضّل بموافقتهم)، ورتّبها بالأسهم، وأخفِ ما لا تريد عرضه. يظهر القسم في الموقع عند وجود رأي واحد ظاهر على الأقل. يمكنك أيضاً إظهاره وإخفاؤه وتغيير ترتيبه وألوانه من تبويب «أقسام الصفحات».</p>
+      <label class="perm-check"><input type="checkbox" id="testimonialsVisible" checked> إظهار قسم آراء العملاء في الصفحة الرئيسية</label>
+      <div id="testimonialsEditor" class="banners-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" id="addTestimonialBtn" class="btn btn-outline btn-sm">+ إضافة رأي عميل</button>
+        <button type="button" id="saveTestimonialsBtn" class="btn btn-dark btn-sm">حفظ آراء العملاء</button>
+      </div>
+      <p id="testimonialsMessage" class="form-note"></p>
+    </div>
+
+
+    <div class="card" id="reviewInviteSettingsCard">
+      <h2>رسالة الدعوة (واتساب والنسخ) وبطاقة الرابط</h2>
+      <p class="form-note">الصورة والعنوان والوصف التي تظهر عند إرسال رابط التقييم في واتساب وغيره، ونص الرسالة المرسلة للعميل. اترك الحقل فارغاً لاستخدام النص الافتراضي.</p>
+      <div class="share-layout">
+        <div class="share-fields">
+          <label>صورة رابط التقييم</label>
+          <input type="file" id="reviewImageFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: أفقي 1200 × 630 أو 1200 × 800 بكسل (JPG)، والعناصر المهمة في المنتصف.</p>
+          <div class="share-actions">
+            <button type="button" class="btn btn-dark btn-sm" id="reviewImageUploadBtn">رفع الصورة</button>
+            <button type="button" class="btn btn-outline btn-sm" id="reviewImageResetBtn">استعادة الصورة الافتراضية</button>
+          </div>
+          <label style="margin-top:14px;">عنوان البطاقة</label>
+          <input type="text" id="ris-title" maxlength="120">
+          <label style="margin-top:10px;">وصف البطاقة</label>
+          <textarea id="ris-description" rows="2" maxlength="300"></textarea>
+          <label style="margin-top:10px;">نص رسالة الدعوة (واتساب والبريد والنسخ)</label>
+          <textarea id="ris-message" rows="8" maxlength="1500"></textarea>
+          <p class="size-hint">يمكنك استخدام: <code>{الاسم}</code> اسم العميل، <code>{المشروع}</code> اسم المشروع، <code>{الرابط}</code> رابط التقييم (ضروري).</p>
+          <button type="button" class="btn btn-sand" id="saveReviewInviteBtn" style="margin-top:6px;">حفظ رسالة الدعوة</button>
+        </div>
+        <div class="share-preview-wrap">
+          <label>معاينة تقريبية للرابط</label>
+          <div class="share-preview">
+            <img id="rvPreviewImg" src="/images/review-share.jpg" alt="">
+            <div class="share-preview-body">
+              <strong id="rvPreviewTitle"></strong>
+              <span id="rvPreviewDesc"></span>
+              <small id="rvPreviewHost"></small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p id="reviewInviteSettingsMessage" class="form-note"></p>
+    </div>
+
+    <div class="card" id="mailAccountCard">
+      <h2>بريد الشركة للإرسال</h2>
+      <p class="form-note">البريد الذي تُرسل منه دعوات التقييم وكل رسائل الموقع (الإشعارات، استعادة كلمة المرور...). اكتب بريد الشركة وكلمة مروره مرة واحدة، وستصل الرسائل للعملاء باسم الشركة ومن بريدها مباشرة. كلمة المرور تُحفظ مشفّرة على الخادم ولا تظهر في المتصفح.</p>
+      <div class="mail-status" id="mailAccountStatus"></div>
+      <form id="mailAccountForm" class="rvd-form mail-form" autocomplete="off">
+        <label class="span2">مزوّد البريد
+          <select id="ma-provider"></select>
+        </label>
+        <p class="form-note span2" id="ma-providerNote" hidden></p>
+        <label>بريد الشركة *<input type="email" id="ma-fromEmail" maxlength="254" dir="ltr" placeholder="info@alomrango.com" autocomplete="off" name="ma-from-email"></label>
+        <label>كلمة مرور البريد *<input type="password" id="ma-pass" maxlength="500" dir="ltr" autocomplete="new-password"></label>
+        <label class="span2">اسم المرسل الظاهر للعميل<input type="text" id="ma-fromName" maxlength="80" placeholder="العمران الذهبية للمقاولات العامة"></label>
+        <details class="span2 mail-advanced" id="ma-advanced">
+          <summary>إعدادات الخادم (متقدم)</summary>
+          <div class="rvd-form">
+            <label>خادم SMTP<input type="text" id="ma-host" autocomplete="off" maxlength="253" dir="ltr" placeholder="smtp.hostinger.com"></label>
+            <label>المنفذ (Port)<input type="number" id="ma-port" autocomplete="off" min="1" max="65535" dir="ltr"></label>
+            <label>التشفير
+              <select id="ma-secure"><option value="1">SSL/TLS (عادةً المنفذ 465)</option><option value="0">STARTTLS (عادةً المنفذ 587)</option></select>
+            </label>
+            <label>اسم المستخدم<input type="text" id="ma-user" autocomplete="off" maxlength="254" dir="ltr" placeholder="نفس بريد الشركة عادةً"></label>
+          </div>
+        </details>
+        <label class="perm-check span2"><input type="checkbox" id="ma-enabled" checked> تفعيل الإرسال من بريد الشركة</label>
+        <div class="span2 share-actions">
+          <button type="button" class="btn btn-sand" id="ma-save">حفظ بريد الشركة</button>
+        </div>
+        <div class="span2 rve-test">
+          <label>اختبار: إرسال رسالة تجريبية إلى<input type="email" id="ma-testTo" maxlength="254" dir="ltr"></label>
+          <button type="button" class="btn btn-dark btn-sm" id="ma-test">اختبار الاتصال والإرسال</button>
+        </div>
+      </form>
+      <p id="mailAccountMessage" class="form-note"></p>
+    </div>
+
+    <div class="card" id="reviewEmailCard">
+      <h2>بريد دعوة التقييم</h2>
+      <p class="form-note">خصّص الرسالة التي تصل للعميل عند الضغط على «✉️ إرسال بالبريد» في طلب التقييم. اترك أي حقل فارغاً لاستخدام النص الافتراضي. يمكنك استخدام <code>{الاسم}</code> و<code>{المشروع}</code> و<code>{الرابط}</code> في العنوان والنصوص.</p>
+      <p class="form-note" id="reviewEmailStatus"></p>
+      <div class="share-layout rve-layout">
+        <div class="share-fields rve-fields">
+          <div class="rve-grid">
+            <label>اسم المرسل لهذه الرسالة<input type="text" id="rve-senderName" maxlength="80" placeholder="فارغ = اسم بريد الشركة"></label>
+            <label>الرد على (Reply-To)<input type="email" id="rve-replyTo" maxlength="254" dir="ltr" placeholder="info@alomrango.com"></label>
+          </div>
+          <label>عنوان البريد (الموضوع)<input type="text" id="rve-subject" maxlength="200"></label>
+          <label>العنوان داخل الرسالة<input type="text" id="rve-heading" maxlength="150"></label>
+          <label>نص الرسالة<textarea id="rve-body" rows="7" maxlength="3000"></textarea></label>
+          <div class="rve-grid">
+            <label>نص الزر<input type="text" id="rve-button" maxlength="60"></label>
+            <label>لون الزر
+              <span class="rve-color"><input type="color" id="rve-buttonColor-picker" value="#1E2A32"><input type="text" id="rve-buttonColor" maxlength="7" dir="ltr" placeholder="#1E2A32"></span>
+            </label>
+          </div>
+          <label>نص التذييل (أسفل الرسالة)<input type="text" id="rve-footer" maxlength="200"></label>
+          <div class="rve-checks">
+            <label class="perm-check"><input type="checkbox" id="rve-showImage" checked> إظهار صورة «رأيك يهمنا» أعلى الرسالة</label>
+            <label class="perm-check"><input type="checkbox" id="rve-showStars" checked> إظهار النجوم ★★★★★ فوق الزر</label>
+          </div>
+          <div class="share-actions" style="margin-top:12px;">
+            <button type="button" class="btn btn-sand" id="saveReviewEmailBtn">حفظ بريد الدعوة</button>
+            <button type="button" class="btn btn-outline btn-sm" id="resetReviewEmailBtn">استعادة النص الافتراضي</button>
+          </div>
+          <div class="rve-test">
+            <label>إرسال رسالة تجريبية إلى<input type="email" id="rve-testTo" dir="ltr" maxlength="254"></label>
+            <button type="button" class="btn btn-dark btn-sm" id="testReviewEmailBtn">إرسال تجربة</button>
+          </div>
+          <p id="reviewEmailMessage" class="form-note"></p>
+        </div>
+        <div class="share-preview-wrap rve-preview-wrap">
+          <label>معاينة البريد <small class="muted">(لعميل تجريبي)</small></label>
+          <div class="rve-subject"><span>الموضوع:</span> <strong id="rve-previewSubject"></strong></div>
+          <div class="rve-from"><span>من:</span> <strong id="rve-previewFrom"></strong></div>
+          <iframe id="rve-preview" class="rve-preview" sandbox="" title="معاينة بريد الدعوة"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-briefs" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>طلبات المشاريع</h2>
+        <span>
+          <a href="/brief" target="_blank" rel="noopener" class="btn btn-outline btn-sm">فتح نموذج الطلب</a>
+          <button id="briefsRefreshBtn" class="btn btn-outline btn-sm">تحديث</button>
+        </span>
+      </div>
+      <p class="form-note">كل طلب يرسله العميل من نموذج طلب المشروع (<code>/brief</code>) يظهر هنا كبريف كامل مع مرفقاته. يستلم العميل نسخة إذا أدخل بريده، ويصل للفريق إشعار حسب إعدادات «الإشعارات».</p>
+      <div class="overview-stats-grid" id="briefsStats"></div>
+      <div class="brief-filters">
+        <input id="briefsSearch" type="search" placeholder="بحث بالاسم أو الجوال أو البريد أو رقم الطلب أو الموقع">
+        <select id="briefsStatusFilter"><option value="">كل الحالات</option></select>
+      </div>
+      <div id="briefsList" class="overview-list"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+  </section>
+
+  <section id="tab-customers" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>قاعدة العملاء</h2>
+        <span class="cus-head-actions">
+          <button id="cusAddBtn" class="btn btn-dark btn-sm hidden">إضافة عميل</button>
+          <a id="cusExportBtn" class="btn btn-outline btn-sm hidden" href="/api/customers/export.csv">تصدير CSV</a>
+          <button id="cusRefreshBtn" class="btn btn-outline btn-sm">تحديث</button>
+        </span>
+      </div>
+      <p class="form-note">يُسجَّل العميل تلقائياً من المحادثة ونموذج التواصل وبريف المشروع، ويُدمج في سجل واحد عند تطابق الجوال أو البريد. البيانات محمية ولا تظهر إلا لمن يملك صلاحية عرض الرسائل.</p>
+      <div class="brief-filters">
+        <input id="cusSearch" type="search" placeholder="بحث بالاسم أو الجوال أو البريد أو الجهة">
+        <select id="cusStatusFilter"><option value="">كل الحالات</option></select>
+        <select id="cusSourceFilter"><option value="">كل المصادر</option></select>
+      </div>
+      <p class="form-note" id="cusCount"></p>
+      <div id="cusList" class="overview-list"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card cus-report" id="cusReport">
+      <div class="card-head-row">
+        <h2>تقرير العملاء</h2>
+        <button id="cusPrintBtn" class="btn btn-outline btn-sm">طباعة / حفظ PDF</button>
+      </div>
+      <div class="brief-filters cus-report-filters">
+        <select id="cusRange">
+          <option value="30">آخر 30 يوماً</option>
+          <option value="90">آخر 90 يوماً</option>
+          <option value="365" selected>آخر 12 شهراً</option>
+          <option value="all">كل الفترات</option>
+          <option value="custom">فترة مخصصة</option>
+        </select>
+        <input id="cusFrom" type="date" hidden aria-label="من تاريخ">
+        <input id="cusTo" type="date" hidden aria-label="إلى تاريخ">
+      </div>
+      <p class="form-note" id="cusReportPeriod"></p>
+      <div class="overview-stats-grid" id="cusReportTotals"></div>
+      <div class="cus-charts">
+        <div class="cus-chart"><h3>العملاء الجدد شهرياً</h3><div id="cusChartMonthly" class="cus-cols"></div></div>
+        <div class="cus-chart"><h3>حسب الحالة</h3><div id="cusChartStatus" class="cus-bars"></div></div>
+        <div class="cus-chart"><h3>حسب المصدر</h3><div id="cusChartSource" class="cus-bars"></div></div>
+        <div class="cus-chart"><h3>مرات التواصل حسب القناة</h3><div id="cusChartChannel" class="cus-bars"></div></div>
+        <div class="cus-chart"><h3>أكثر الخدمات طلباً</h3><div id="cusChartServices" class="cus-bars"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-notifications" class="dash-panel">
+    <div class="card">
+      <h2>إشعارات البريد الإلكتروني</h2>
+      <p class="form-note">تصل الإشعارات لفريق العمل عند وصول محادثة أو طلب جديد. فعّل ما تحتاجه فقط، وخصّص المستلمين والمحتوى لكل نوع.</p>
+      <div id="ntfStatus" class="ntf-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>إشعارات لوحة التحكم والنغمة</h2>
+      <p class="form-note">تظهر الإشعارات في الجرس أعلى الصفحة لكل مستخدم حسب صلاحياته، وتُفحص كل 20 ثانية. إعدادات النغمة خاصة بهذا الجهاز والمتصفح.</p>
+      <div class="ntf-schedule">
+        <label class="perm-check"><input type="checkbox" id="snd-enabled"> تشغيل النغمة عند وصول إشعار جديد</label>
+        <label>النغمة <select id="snd-tone"><option value="chime">جرس هادئ</option><option value="ding">تنبيه قصير</option><option value="pulse">نبضتان</option></select></label>
+        <label>مستوى الصوت <input id="snd-volume" type="range" min="0.05" max="1" step="0.05"></label>
+        <button type="button" class="btn btn-outline btn-sm" id="snd-test">تجربة النغمة</button>
+      </div>
+      <div class="ntf-schedule">
+        <button type="button" class="btn btn-outline btn-sm" id="desktop-perm">تفعيل إشعارات المتصفح</button>
+        <span class="form-note" id="desktop-perm-note"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>المرسل والمستلمون</h2>
+      <div class="form-grid">
+        <div class="form-field"><label for="ntfSenderName">اسم المرسل الظاهر</label><input id="ntfSenderName" type="text" maxlength="80" placeholder="العمران الذهبية للمقاولات العامة"><p class="form-note" id="ntfSenderNote"></p></div>
+        <div class="form-field"><label for="ntfReplyTo">عنوان الرد (للرسائل المرسلة للعملاء)</label><input id="ntfReplyTo" type="text" dir="ltr" maxlength="254" placeholder="info@example.com"><p class="form-note">عندما يرد العميل على نسخة البريف تصل الردود لهذا العنوان.</p></div>
+      </div>
+      <div class="form-field">
+        <label for="ntfRecipients">المستلمون العامون (حتى 5 عناوين، افصل بينها بفاصلة)</label>
+        <input id="ntfRecipients" type="text" dir="ltr" placeholder="team@example.com, manager@example.com">
+        <p class="form-note" id="ntfRecipientsNote"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="ntf-group-toggle"><input type="checkbox" id="ntf-chat-enabled"> <span><strong>إشعارات المحادثة</strong><small>من المحادثة المباشرة في الموقع</small></span></label>
+      <div class="form-field ntf-group-recipients"><label for="ntf-chat-recipients">مستلمو إشعارات المحادثة <small class="muted">(اختياري — إن تُرك فارغاً تُستخدم القائمة العامة)</small></label><input id="ntf-chat-recipients" type="text" dir="ltr" placeholder="sales@example.com"></div>
+      <div class="ntf-events" data-group="chat"></div>
+    </div>
+
+    <div class="card">
+      <label class="ntf-group-toggle"><input type="checkbox" id="ntf-requests-enabled"> <span><strong>إشعارات الطلبات</strong><small>الطلبات الواردة من نماذج الموقع</small></span></label>
+      <div class="form-field ntf-group-recipients"><label for="ntf-requests-recipients">مستلمو إشعارات الطلبات <small class="muted">(اختياري — إن تُرك فارغاً تُستخدم القائمة العامة)</small></label><input id="ntf-requests-recipients" type="text" dir="ltr" placeholder="projects@example.com"></div>
+      <div class="ntf-events" data-group="requests"></div>
+    </div>
+
+    <div class="card">
+      <label class="ntf-group-toggle"><input type="checkbox" id="ntf-digest-enabled"> <span><strong>تقرير دوري بطلبات المشاريع</strong><small>ملخص بالبريفات المستلمة وحالاتها وما لم يُراجع بعد، يُرسل لمستلمي إشعارات الطلبات</small></span></label>
+      <div class="ntf-schedule">
+        <label>التكرار <select id="ntf-digest-frequency"><option value="daily">يومي (آخر 24 ساعة)</option><option value="weekly">أسبوعي (آخر 7 أيام)</option></select></label>
+        <label id="ntf-digest-weekday-wrap">اليوم <select id="ntf-digest-weekday"><option value="0">الأحد</option><option value="1">الاثنين</option><option value="2">الثلاثاء</option><option value="3">الأربعاء</option><option value="4">الخميس</option><option value="5">الجمعة</option><option value="6">السبت</option></select></label>
+        <label>الساعة (توقيت السعودية) <select id="ntf-digest-hour"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option></select></label>
+        <button type="button" class="btn btn-outline btn-sm" id="ntfDigestNow">إرسال التقرير الآن</button>
+      </div>
+      <p class="form-note" id="ntfDigestNote">لا يُرسل التقرير إذا لم تصل طلبات ولا توجد طلبات بانتظار المراجعة.</p>
+    </div>
+
+    <div class="card">
+      <label class="ntf-group-toggle"><input type="checkbox" id="ntf-reminders-enabled"> <span><strong>التذكير بالمتابعة</strong><small>رسالة يومية واحدة بكل ما ينتظر الرد، تُرسل للمستلمين العامين</small></span></label>
+      <div class="ntf-events">
+        <label class="perm-check"><input type="checkbox" id="ntf-rem-customers"> عملاء جدد لم يُتواصل معهم</label>
+        <label class="perm-check"><input type="checkbox" id="ntf-rem-chats"> محادثات تنتظر رد موظف</label>
+        <label class="perm-check"><input type="checkbox" id="ntf-rem-briefs"> طلبات مشاريع بحالة «جديد» لم تُراجع</label>
+      </div>
+      <div class="ntf-schedule">
+        <label>بعد مرور <input id="ntf-rem-after" type="number" min="1" max="720" style="width:80px"> ساعة دون متابعة</label>
+        <label>وقت الإرسال (توقيت السعودية) <select id="ntf-rem-hour"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option></select></label>
+        <button type="button" class="btn btn-outline btn-sm" id="ntfRemindersNow">إرسال التذكير الآن</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ntf-actions">
+        <button id="ntfSaveBtn" class="btn btn-dark">حفظ إعدادات الإشعارات</button>
+        <button id="ntfTestBtn" class="btn btn-outline">إرسال رسالة تجريبية</button>
+      </div>
+      <p id="ntfMsg" class="form-note"></p>
+    </div>
+  </section>
+
+  <section id="tab-messages" class="dash-panel">
+    <div class="card">
+      <div class="card-head-row">
+        <h2>رسائل نموذج التواصل</h2>
+        <span class="pinned-count" id="messagesUnreadCount"></span>
+      </div>
+      <div id="messagesList">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-account" class="dash-panel">
+
+    <div class="card">
+      <h2>بيانات حسابك</h2>
+      <form id="updateProfileForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="up-username">اسم المستخدم</label>
+            <input type="text" id="up-username" minlength="3">
+          </div>
+          <div class="form-field">
+            <label for="up-email">البريد الإلكتروني</label>
+            <input type="email" id="up-email">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-dark">تحديث البيانات</button>
+        <p id="upMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>تغيير كلمة المرور</h2>
+      <form id="changePasswordForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="cp-current">كلمة المرور الحالية</label>
+            <input type="password" id="cp-current" required>
+          </div>
+          <div class="form-field">
+            <label for="cp-new">كلمة المرور الجديدة</label>
+            <input type="password" id="cp-new" required minlength="12">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-dark">تحديث كلمة المرور</button>
+        <p id="cpMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <!-- يظهر هذا القسم كاملاً للمسؤول فقط عبر جافاسكربت (adminOnly) -->
+    <div id="adminUsersSection" class="hidden">
+      <div class="card">
+        <h2>إضافة مستخدم جديد</h2>
+        <form id="addUserForm" class="dash-form">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="nu-username">اسم المستخدم</label>
+              <input type="text" id="nu-username" required>
+            </div>
+            <div class="form-field">
+              <label for="nu-email">البريد الإلكتروني</label>
+              <input type="email" id="nu-email" required>
+            </div>
+            <div class="form-field">
+              <label for="nu-password">كلمة المرور</label>
+              <input type="password" id="nu-password" required minlength="12">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="nu-role">الدور الوظيفي</label>
+            <select id="nu-role">
+              <option value="editor" selected>محرر (Editor) — صلاحيات تحددها أدناه</option>
+              <option value="viewer">مشاهد (Viewer) — عرض فقط</option>
+              <option value="owner" id="nu-role-owner" hidden disabled>مالك (Owner) — كل الصلاحيات</option>
+            </select>
+            <p class="form-note" style="margin-top:4px;">اختيار دور يعبّي الصلاحيات تلقائياً أدناه، وتقدر تعدّلها يدوياً بعده. المالك الرئيسي فقط يستطيع إضافة مالكين.</p>
+          </div>
+          <div class="perm-grid">
+            <label class="perm-check"><input type="checkbox" id="nu-addWork"> إضافة أعمال</label>
+            <label class="perm-check"><input type="checkbox" id="nu-editWork"> تعديل الأعمال</label>
+            <label class="perm-check"><input type="checkbox" id="nu-hideWork"> إظهار / إخفاء الأعمال</label>
+            <label class="perm-check"><input type="checkbox" id="nu-deleteWork"> حذف الأعمال</label>
+            <label class="perm-check"><input type="checkbox" id="nu-viewMessages"> عرض الرسائل</label>
+            <label class="perm-check"><input type="checkbox" id="nu-replyMessages"> الرد على الرسائل</label>
+            <label class="perm-check"><input type="checkbox" id="nu-manageChat"> إدارة المحادثات</label>
+          </div>
+          <button type="submit" class="btn btn-sand">إضافة المستخدم</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>المستخدمون الحاليون</h2>
+        <div id="usersList" class="users-list">
+          <p class="muted">جارِ التحميل...</p>
+        </div>
+      </div>
+
+      <div class="card hidden" id="resetSetupCard">
+        <h2>إعادة تعيين لوحة التحكم</h2>
+        <p class="form-note">⚠️ تحذير: هذا سيحذف جميع المستخدمين والرسائل والمحادثات. سيتم إعادة توجيهك إلى صفحة الإعداد.</p>
+        <button id="resetSetupBtn" class="btn btn-danger">إعادة تعيين الإعدادات</button>
+      </div>
+    </div>
+
+    <div id="ownerDeleteSection" class="hidden">
+      <div class="card">
+        <h2>حذف حسابك</h2>
+        <p class="form-note">⚠️ تحذير: هذا سيحذف حسابك بشكل نهائي ولا يمكن التراجع عنه.</p>
+        <button id="deleteAccountBtn" class="btn btn-danger">حذف حسابي</button>
+      </div>
+    </div>
+
+  </section>
+</main>
+</div>
+
+<!-- نافذة صلاحيات/إيقاف مستخدم -->
+<div id="cusModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cusModalTitle">
+  <div class="modal-box cus-modal">
+    <div class="card-head-row"><h3 id="cusModalTitle">بيانات العميل</h3><button type="button" class="btn btn-outline btn-sm" id="cusModalClose">إغلاق</button></div>
+    <form id="cusForm" class="dash-form">
+      <div class="form-grid">
+        <div class="form-field"><label for="cus-name">الاسم</label><input id="cus-name" type="text" maxlength="100" required></div>
+        <div class="form-field"><label for="cus-org">الجهة / الشركة</label><input id="cus-org" type="text" maxlength="150"></div>
+        <div class="form-field"><label for="cus-phone">الجوال (صيغة دولية)</label><input id="cus-phone" type="text" dir="ltr" inputmode="tel" maxlength="20" placeholder="+966555555555"></div>
+        <div class="form-field"><label for="cus-email">البريد الإلكتروني</label><input id="cus-email" type="email" dir="ltr" maxlength="254"></div>
+        <div class="form-field"><label for="cus-status">الحالة</label><select id="cus-status"></select></div>
+      </div>
+      <div class="form-field"><label for="cus-notes">ملاحظات داخلية</label><textarea id="cus-notes" rows="3" maxlength="5000"></textarea></div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button type="button" class="btn btn-danger btn-sm hidden" id="cusDeleteBtn">حذف العميل</button>
+        <button type="submit" class="btn btn-dark">حفظ البيانات</button>
+      </div>
+    </form>
+
+    <div id="cusContactSection">
+      <div class="modal-divider"></div>
+      <h3>التواصل مع العميل</h3>
+      <div class="cus-channel-tabs" role="tablist">
+        <button type="button" class="is-active" data-channel="whatsapp">واتساب</button>
+        <button type="button" data-channel="email">بريد إلكتروني</button>
+        <button type="button" data-channel="call">اتصال</button>
+        <button type="button" data-channel="note">ملاحظة متابعة</button>
+      </div>
+      <div class="form-field" id="cusSubjectField" hidden><label for="cus-subject">عنوان الرسالة</label><input id="cus-subject" type="text" maxlength="200"></div>
+      <div class="form-field" id="cusBodyField"><label for="cus-body" id="cusBodyLabel">نص الرسالة</label><textarea id="cus-body" rows="4" maxlength="5000"></textarea></div>
+      <p class="form-note" id="cusChannelNote"></p>
+      <button type="button" class="btn btn-dark" id="cusSendBtn">فتح واتساب</button>
+    </div>
+
+    <div class="modal-divider"></div>
+    <h3>السجل</h3>
+    <div id="cusTimeline" class="cus-timeline"></div>
+  </div>
+</div>
+
+<div id="permModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>صلاحيات المستخدم: <span id="permModalUsername"></span></h3>
+    <div class="perm-grid">
+      <label class="perm-check"><input type="checkbox" id="pm-addWork"> إضافة أعمال</label>
+      <label class="perm-check"><input type="checkbox" id="pm-editWork"> تعديل الأعمال</label>
+      <label class="perm-check"><input type="checkbox" id="pm-hideWork"> إظهار / إخفاء الأعمال</label>
+      <label class="perm-check"><input type="checkbox" id="pm-deleteWork"> حذف الأعمال</label>
+      <label class="perm-check"><input type="checkbox" id="pm-viewMessages"> عرض الرسائل</label>
+      <label class="perm-check"><input type="checkbox" id="pm-replyMessages"> الرد على الرسائل</label>
+      <label class="perm-check"><input type="checkbox" id="pm-manageChat"> إدارة المحادثات</label>
+    </div>
+    <div class="modal-divider"></div>
+    <label class="perm-check danger"><input type="checkbox" id="pm-suspended"> إيقاف هذا الحساب مؤقتاً</label>
+    <div id="deleteUserBtnContainer" class="modal-divider" style="margin-top:12px;"></div>
+    <div class="modal-actions">
+      <button id="permModalCancel" class="btn btn-outline">إلغاء</button>
+      <button id="permModalSave" class="btn btn-dark">حفظ التغييرات</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة تأكيد الحذف -->
+<div id="confirmModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="confirmTitle">تأكيد الحذف</h3>
+    <p id="confirmMessage"></p>
+    <div class="modal-actions">
+      <button id="confirmCancel" class="btn btn-outline">إلغاء</button>
+      <button id="confirmOk" class="btn btn-danger">حذف نهائياً</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/image-compress.js"></script>
+<script src="js/dashboard.js" data-page="dashboard"></script>
+</body>
+</html>

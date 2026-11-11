@@ -180,7 +180,7 @@ function brief_store_files(array $files, $categories): array {
     $prepared = [];
     foreach ($files as $f) {
         if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > BRIEF_MAX_FILE) throw new RuntimeException('حجم أحد الملفات أكبر من 15 ميجابايت.');
-        if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp'])) throw new RuntimeException('تعذر رفع الملفات.');
+        if ($f['error'] !== UPLOAD_ERR_OK || !is_upload($f['tmp'])) throw new RuntimeException('تعذر رفع الملفات.');
         $type = (string)$f['type'];
         $byName = preg_match('/\.(pdf|jpe?g|png|webp|dwg)$/i', (string)$f['name'], $m) ? strtolower('.' . $m[1]) : '';
         if (!isset(BRIEF_FILE_TYPES[$type]) || $byName === '') {
@@ -199,7 +199,7 @@ function brief_store_files(array $files, $categories): array {
     $cats = is_list($categories) ? $categories : [];
     foreach ($prepared as $i => [$f, $ext]) {
         $id = rand_hex(12);
-        if (!move_uploaded_file($f['tmp'], $dir . '/' . $id . $ext)) {
+        if (!move_upload($f['tmp'], $dir . '/' . $id . $ext)) {
             foreach ($out as $o) @unlink($dir . '/' . $o['id'] . $o['ext']);
             throw new RuntimeException('تعذر رفع الملفات.');
         }
@@ -275,15 +275,15 @@ function api_briefs_create(): void {
         'ref' => ['type' => 'brief', 'id' => $brief['id'], 'label' => 'طلب مشروع ' . $brief['ref'] . ': ' . brief_label('projectType', $brief['project']['projectType']), 'at' => $brief['createdAt']]]);
     $reportPath = '/brief/' . $brief['id'] . '?t=' . rawurlencode($token);
     respond_then(fn() => send_json(['ok' => true, 'ref' => $brief['ref'], 'reportUrl' => $reportPath], 201), function () use ($brief, $reportPath) {
-        $base = site_base_url();
+        $base = notify_base_url();
         $company = brief_render_email($brief, $base ? $base . '/brief/' . $brief['id'] : null, true);
-        notify_company('requests.brief', ['vars' => ['name' => $brief['client']['name'], 'ref' => $brief['ref']], 'subject' => $company['subject'],
-            'html' => $company['html'], 'text' => $company['text'], 'replyTo' => $brief['client']['email'] ?: null]);
-        if ($brief['client']['email'] !== '') {
-            $client = brief_render_email($brief, $base ? $base . $reportPath : null, false);
-            $replyTo = notify_recipients('requests')[0] ?? null;
-            send_mail([$brief['client']['email']], $client['subject'], $client['text'], $client['html'], $replyTo);
-        }
+        notify_company('requests.brief', ['vars' => ['name' => $brief['client']['name'], 'phone' => $brief['client']['phone'], 'email' => $brief['client']['email'], 'ref' => $brief['ref'], 'project' => brief_label('projectType', $brief['project']['projectType'])],
+            'subject' => $company['subject'], 'html' => $company['html'], 'text' => $company['text'], 'replyTo' => $brief['client']['email'] ?: null]);
+        if (!mail_configured() || $brief['client']['email'] === '') return;
+        $client = brief_render_email($brief, $base ? $base . $reportPath : null, false);
+        $replyTo = (notify_config()['sender']['replyTo'] ?? '') ?: (effective_recipients()[0] ?? null);
+        try { send_mail_or_throw([$brief['client']['email']], $client['subject'], $client['text'], $client['html'], $replyTo); }
+        catch (Throwable $e) { log_error('فشل إرسال نسخة طلب المشروع ' . $brief['ref'] . ' للعميل: ' . $e->getMessage()); }
     });
 }
 
@@ -380,7 +380,7 @@ function brief_file_url(array $b, array $f, string $token): string {
     return '/brief/' . rawurlencode($b['id']) . '/files/' . rawurlencode($f['id']) . ($token !== '' ? '?t=' . rawurlencode($token) : '');
 }
 
-function brief_render_report(array $b, string $nonce, string $token): string {
+function brief_render_report(array $b, string $nonce, string $token, bool $staff = false): string {
     $rows = '';
     foreach (brief_sections($b) as [$title, $items]) { $body = brief_table_rows($items); if ($body) $rows .= '<section><h2>' . h($title) . '</h2><table>' . $body . '</table></section>'; }
     $desc = '';
@@ -391,6 +391,11 @@ function brief_render_report(array $b, string $nonce, string $token): string {
         foreach ($b['files'] as $f) $files .= '<tr><th>' . h(brief_label('fileCategory', $f['category'] ?? '')) . '</th><td><a href="' . h(brief_file_url($b, $f, $token)) . '" target="_blank" rel="noopener">' . h($f['name']) . '</a> <span class="size" dir="ltr">' . h(fmt_size((int)$f['size'])) . '</span></td></tr>';
         $files .= '</table></section>';
     }
+    $staffBlock = '';
+    if ($staff) {
+        $staffBlock = '<section class="staff"><h2>متابعة داخلية</h2><table>' . brief_table_rows([['حالة الطلب', brief_label('status', $b['status'] ?? '')], ['آخر تحديث', fmt_date($b['updatedAt'] ?? '')]])
+            . (!empty($b['notes']) ? '<tr><th>الملاحظات</th><td>' . nl2br(h($b['notes']), false) . '</td></tr>' : '') . '</table></section>';
+    }
     $css = file_get_contents(__DIR__ . '/brief-report.css');
     return '<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -400,7 +405,7 @@ function brief_render_report(array $b, string $nonce, string $token): string {
 <header><div><strong>' . h(COMPANY) . '</strong><span>طلب مشروع مقاولات</span></div>
 <div class="meta">رقم الطلب<b dir="ltr">' . h($b['ref']) . '</b>' . h(fmt_date($b['createdAt'])) . '</div></header>
 <main><h1>بريف المشروع</h1><p class="lead">هذا التقرير يلخّص البيانات التي أرسلها العميل عبر نموذج طلب المشروع في موقع ' . h(COMPANY) . '.</p>
-' . $rows . $desc . $files . '</main>
+' . $rows . $desc . $files . $staffBlock . '</main>
 <footer>' . h(COMPANY) . ' — تم إنشاء هذا التقرير آلياً. للاستفسار عن الطلب يرجى ذكر الرقم ' . h($b['ref']) . '.</footer>
 </div>
 <div class="actions"><button type="button" id="printBtn">طباعة / حفظ PDF</button></div>
@@ -464,18 +469,19 @@ function brief_no_store_headers(): void {
 function page_brief_report(string $id): void {
     brief_no_store_headers();
     $b = brief_get($id);
-    $token = str_val($_GET['t'] ?? '');
-    if (!$b || !brief_check_token($b, $token)) send_html(BRIEF_NOT_FOUND, 404);
+    $staff = is_brief_staff();
+    $token = $staff ? '' : str_val($_GET['t'] ?? '');
+    if (!$b || (!$staff && !brief_check_token($b, $token))) send_html(BRIEF_NOT_FOUND, 404);
     $nonce = base64_encode(random_bytes(16));
     header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-$nonce'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
-    send_html(brief_render_report($b, $nonce, $token));
+    send_html(brief_render_report($b, $nonce, $token, $staff));
 }
 
 // GET /brief/:id/files/:fileId?t=…
 function page_brief_file(string $id, string $fileId): void {
     brief_no_store_headers();
     $b = brief_get($id);
-    if (!$b || !brief_check_token($b, $_GET['t'] ?? '')) send_html(BRIEF_NOT_FOUND, 404);
+    if (!$b || (!is_brief_staff() && !brief_check_token($b, $_GET['t'] ?? ''))) send_html(BRIEF_NOT_FOUND, 404);
     $file = null;
     foreach ($b['files'] ?? [] as $f) if (($f['id'] ?? '') === $fileId) $file = $f;
     if (!$file || !preg_match('/^[a-f0-9]+$/', (string)$file['id']) || !preg_match('/^\.[a-z]+$/', (string)$file['ext'])) send_html(BRIEF_NOT_FOUND, 404);

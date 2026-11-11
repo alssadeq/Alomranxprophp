@@ -19,20 +19,43 @@ function ensure_data_dir(): void {
     if (!is_file($ht)) @file_put_contents($ht, "Require all denied\nDeny from all\n");
 }
 
+// مصفوفات PHP لا تفرّق بين الكائن الفارغ {} والقائمة الفارغة []، فيُعلَّم الكائن
+// الفارغ عند القراءة بمفتاح خاص (EO) ويُعاد إلى {} عند الكتابة، حتى تبقى صيغة
+// البيانات مطابقة تماماً لنسخة Node. المفتاح يجعل الكائن الفارغ «غير فارغ» في
+// شروط PHP، وهذا مطابق لسلوك JavaScript (الكائن {} قيمة صحيحة).
+const EO = '__eo';
+const EO_EMPTY = [EO => 1];
+const JSON_STRING_RE = '"(?:[^"\\\\]|\\\\.)*"';
+
+function json_decode_keep(string $raw) {
+    $raw = preg_replace('/' . JSON_STRING_RE . '(*SKIP)(*F)|\{\s*\}/s', '{"' . EO . '":1}', $raw);
+    return json_decode((string)$raw, true);
+}
+
 function read_json(string $name, $fallback = []) {
     $file = DATA_DIR . '/' . $name;
     if (!is_file($file)) return $fallback;
     $raw = @file_get_contents($file);
     if ($raw === false || trim($raw) === '') return $fallback;
-    $v = json_decode($raw, true);
+    $v = json_decode_keep($raw);
     return $v === null ? $fallback : $v;
 }
 
 function json_out_str($data, bool $pretty = false): string {
     $flags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE;
     if ($pretty) $flags |= JSON_PRETTY_PRINT;
-    return json_encode($data, $flags);
+    $s = (string)json_encode($data, $flags);
+    if (str_contains($s, '"' . EO . '"')) {
+        $s = preg_replace('/\{\s*"' . EO . '":\s*1\s*\}/', '{}', $s);
+        $s = preg_replace('/"' . EO . '":\s*1,\s*/', '', $s);
+        $s = preg_replace('/,\s*"' . EO . '":\s*1(?=\s*\})/', '', $s);
+    }
+    return $s;
 }
+
+// مفاتيح كائن دون علامة الكائن الفارغ
+function obj(array $a): array { unset($a[EO]); return $a; }
+function is_obj($v): bool { return is_array($v) && ($v === [] || isset($v[EO]) || !array_is_list($v)); }
 
 // كتابة ذرية: ملف مؤقت ثم إعادة تسمية
 function write_json(string $name, $data): void {
@@ -401,4 +424,53 @@ function rate_limit(string $bucket, int $max, int $windowSec, string $message, s
         return $e[0] > $max;
     });
     if ($blocked) send_json(['error' => $message], 429);
+}
+
+/* ---------- رفع الملفات بطلبات PUT ---------- */
+// PHP لا يقرأ multipart/form-data إلا في طلبات POST، ولوحة التحكم ترفع الصور بطلبات PUT.
+// هذا المحلل يملأ $_POST و $_FILES لطلبات PUT/PATCH/DELETE بنفس الشكل.
+
+$GLOBALS['MANUAL_UPLOADS'] = [];
+
+function parse_multipart_non_post(): void {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $type = (string)($_SERVER['CONTENT_TYPE'] ?? '');
+    if ($method === 'POST' || $method === 'GET' || !preg_match('/^multipart\/form-data;.*boundary=("?)([^";]+)\1/i', $type, $m)) return;
+    $len = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($len > 120 * 1024 * 1024) return;
+    $raw = (string)file_get_contents('php://input');
+    $boundary = '--' . $m[2];
+    $parts = explode($boundary, $raw);
+    unset($raw);
+    foreach ($parts as $part) {
+        if ($part === '' || str_starts_with($part, '--')) continue;
+        $part = preg_replace('/^\r\n/', '', $part, 1);
+        $pos = strpos($part, "\r\n\r\n");
+        if ($pos === false) continue;
+        $head = substr($part, 0, $pos);
+        $body = substr($part, $pos + 4);
+        if (str_ends_with($body, "\r\n")) $body = substr($body, 0, -2);
+        if (!preg_match('/name="([^"]*)"/i', $head, $nm)) continue;
+        $name = $nm[1];
+        if (preg_match('/filename="([^"]*)"/i', $head, $fn)) {
+            $ctype = preg_match('/Content-Type:\s*([^\r\n]+)/i', $head, $ct) ? trim($ct[1]) : 'application/octet-stream';
+            $tmp = tempnam(sys_get_temp_dir(), 'upl');
+            file_put_contents($tmp, $body);
+            $GLOBALS['MANUAL_UPLOADS'][$tmp] = true;
+            register_shutdown_function(fn() => is_file($tmp) && @unlink($tmp));
+            $entry = ['name' => $fn[1], 'type' => $ctype, 'tmp_name' => $tmp, 'error' => $fn[1] === '' && $body === '' ? UPLOAD_ERR_NO_FILE : UPLOAD_ERR_OK, 'size' => strlen($body)];
+            if (str_ends_with($name, '[]')) {
+                $k = substr($name, 0, -2);
+                foreach ($entry as $f => $v) $_FILES[$k][$f][] = $v;
+            } else $_FILES[$name] = $entry;
+        } else {
+            if (str_ends_with($name, '[]')) $_POST[substr($name, 0, -2)][] = $body;
+            else $_POST[$name] = $body;
+        }
+    }
+}
+function is_upload(string $tmp): bool { return isset($GLOBALS['MANUAL_UPLOADS'][$tmp]) ? is_file($tmp) : is_uploaded_file($tmp); }
+function move_upload(string $tmp, string $dest): bool {
+    if (isset($GLOBALS['MANUAL_UPLOADS'][$tmp])) { $ok = @rename($tmp, $dest) || (@copy($tmp, $dest) && @unlink($tmp)); return $ok; }
+    return move_uploaded_file($tmp, $dest);
 }

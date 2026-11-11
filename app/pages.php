@@ -85,15 +85,6 @@ function not_found(): void {
         . '<h1 style="font-size:22px">الصفحة غير موجودة</h1><p><a href="/" style="color:#1E2A32;font-weight:700">العودة إلى الصفحة الرئيسية</a></p></body></html>', 404);
 }
 
-// لوحة التحكم تُنقل في المرحلة الثانية من نسخة PHP
-function admin_coming_soon(): void {
-    header('X-Robots-Tag: noindex, nofollow');
-    send_html('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>لوحة التحكم</title></head>'
-        . '<body style="font-family:Tahoma,Arial,sans-serif;text-align:center;padding:70px 20px;background:#f3efe8;color:#1E2A32">'
-        . '<h1 style="font-size:22px">لوحة التحكم قيد التجهيز</h1><p>يجري نقل لوحة التحكم إلى نسخة الاستضافة الحالية، وستتوفر قريباً.</p>'
-        . '<p><a href="/" style="color:#1E2A32;font-weight:700">العودة إلى الموقع</a></p></body></html>', 503);
-}
-
 // الصور: المرفوعة من لوحة التحكم في data/uploads (الصور الأصلية في images/ تُخدم مباشرة من الخادم)
 function serve_upload(string $rel): void {
     $rel = ltrim($rel, '/');

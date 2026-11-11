@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول المطوّر | العمران</title>
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="auth-body">
+
+  <form id="devLoginForm" class="auth-card" novalidate>
+    <div class="auth-brand">
+      <strong>العمران</strong>
+      <span>مركز تحكم المطوّر</span>
+    </div>
+
+    <h1>تسجيل دخول المطوّر</h1>
+    <p class="auth-sub">وصول منفصل عن لوحة تحكم الأعمال، مخصص لمهام الصيانة والمراقبة التقنية.</p>
+
+    <div class="form-field">
+      <label for="username">اسم المستخدم</label>
+      <input type="text" id="username" name="username" autocomplete="username" required>
+    </div>
+    <div class="form-field">
+      <label for="password">كلمة المرور</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+
+    <div id="devLoginError" class="auth-error hidden"></div>
+
+    <button type="submit" class="btn btn-dark btn-block">دخول</button>
+  </form>
+
+<script src="js/dev-center.js" data-page="developer-login"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول | لوحة تحكم العمران</title>
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="auth-body">
+
+  <form id="loginForm" class="auth-card" novalidate>
+    <div class="auth-brand">
+      <strong>العمران</strong>
+      <span>لوحة التحكم</span>
+    </div>
+
+    <h1>تسجيل الدخول</h1>
+    <p class="auth-sub">أدخل بيانات حسابك للوصول إلى لوحة إدارة الأعمال.</p>
+
+    <div class="form-field">
+      <label for="username">اسم المستخدم</label>
+      <input type="text" id="username" name="username" autocomplete="username" required>
+    </div>
+    <div class="form-field">
+      <label for="password">كلمة المرور</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+
+    <div id="loginError" class="auth-error hidden"></div>
+
+    <button type="submit" class="btn btn-dark btn-block">دخول</button>
+    <a href="/forgot-password" class="auth-link">نسيت كلمة المرور؟</a>
+  </form>
+
+<script src="js/dashboard.js" data-page="login"></script>
+</body>
+</html>
