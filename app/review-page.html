@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1E2A32">
+<title>رأيك يهمنا | العمران الذهبية للمقاولات العامة</title>
+<!--META-->
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/review.css">
+<!--DATA-->
+</head>
+<body>
+<header class="rv-top">
+  <a href="/" class="rv-brand"><img src="/images/alomran-logo.png" alt="العمران الذهبية"></a>
+  <button type="button" class="rv-lang" id="rvLang">English</button>
+</header>
+
+<main class="rv-wrap">
+  <figure class="rv-hero"><img id="rvHero" alt="" width="1200" height="800"></figure>
+
+  <!-- النموذج -->
+  <section class="rv-card" id="rvForm" hidden>
+    <div class="rv-intro">
+      <h1 id="rvHello"></h1>
+      <p id="rvSub"></p>
+    </div>
+
+    <ol class="rv-steps" aria-hidden="true">
+      <li class="is-on"><span>1</span><em data-t="stepRate"></em></li>
+      <li><span>2</span><em data-t="stepDetails"></em></li>
+      <li><span>3</span><em data-t="stepWords"></em></li>
+    </ol>
+    <div class="rv-progress"><i id="rvBar"></i></div>
+
+    <form id="rvF" novalidate>
+      <!-- 1: التقييم العام -->
+      <div class="rv-step is-on" data-step="1">
+        <h2 data-t="q1"></h2>
+        <div class="rv-stars" id="rvStars" role="radiogroup"></div>
+        <div class="rv-mood" id="rvMood" aria-live="polite"><span class="rv-emoji" id="rvEmoji">⭐</span><strong id="rvMoodText"></strong></div>
+      </div>
+
+      <!-- 2: التفاصيل -->
+      <div class="rv-step" data-step="2">
+        <h2 data-t="q2"></h2>
+        <p class="rv-hint" data-t="q2hint"></p>
+        <div class="rv-criteria" id="rvCriteria"></div>
+        <h3 data-t="qRecommend"></h3>
+        <div class="rv-choice" id="rvRecommend">
+          <button type="button" data-v="yes"><span>👍</span><em data-t="yes"></em></button>
+          <button type="button" data-v="no"><span>🤔</span><em data-t="notSure"></em></button>
+        </div>
+      </div>
+
+      <!-- 3: رأيك -->
+      <div class="rv-step" data-step="3">
+        <h2 data-t="q3"></h2>
+        <div class="rv-chips" id="rvChips"></div>
+        <textarea id="rvText" rows="5" maxlength="1200"></textarea>
+        <div class="rv-count"><span id="rvCount">0</span> / 1200</div>
+        <div class="rv-grid">
+          <label><span data-t="yourName"></span><input id="rvName" maxlength="80" autocomplete="name"></label>
+          <label><span data-t="yourRole"></span><input id="rvRole" maxlength="100"></label>
+        </div>
+        <label class="rv-consent"><input type="checkbox" id="rvConsent"><span data-t="consent"></span></label>
+
+        <div class="rv-preview">
+          <small data-t="previewLabel"></small>
+          <div class="rv-pcard">
+            <div class="rv-pstars" id="pvStars"></div>
+            <p id="pvText"></p>
+            <div class="rv-pauthor"><b id="pvAvatar"></b><span><strong id="pvName"></strong><em id="pvRole"></em></span></div>
+          </div>
+        </div>
+      </div>
+
+      <p class="rv-error" id="rvError" role="alert"></p>
+      <div class="rv-nav">
+        <button type="button" class="rv-btn ghost" id="rvBack" data-t="back"></button>
+        <button type="button" class="rv-btn" id="rvNext" data-t="next"></button>
+        <button type="submit" class="rv-btn gold" id="rvSubmit" data-t="submit" hidden></button>
+      </div>
+    </form>
+  </section>
+
+  <!-- بعد الإرسال -->
+  <section class="rv-card rv-done" id="rvThanks" hidden>
+    <div class="rv-check">✓</div>
+    <h1 data-t="thanksTitle"></h1>
+    <p data-t="thanksText"></p>
+    <div class="rv-burst" aria-hidden="true"></div>
+    <a class="rv-btn" href="/" data-t="visit"></a>
+  </section>
+
+  <!-- رابط غير صالح -->
+  <section class="rv-card rv-done" id="rvInvalid" hidden>
+    <div class="rv-check warn">!</div>
+    <h1 data-t="invalidTitle"></h1>
+    <p data-t="invalidText"></p>
+    <a class="rv-btn" href="/" data-t="visit"></a>
+  </section>
+</main>
+
+<footer class="rv-foot">العمران الذهبية للمقاولات العامة — <span data-t="tagline"></span></footer>
+<script src="/js/review.js"></script>
+</body>
+</html>

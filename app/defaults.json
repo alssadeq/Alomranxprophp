@@ -1,0 +1,572 @@
+{
+ "stats": {
+  "yearsExperience": "15+",
+  "projectsDone": "250+",
+  "clientSatisfaction": "98%",
+  "citiesServed": "13"
+ },
+ "legacyStats": {
+  "yearsExperience": "15+",
+  "projectsDone": "120+",
+  "clientSatisfaction": "98%",
+  "citiesServed": "4"
+ },
+ "services": [
+  {
+   "title": {
+    "ar": "إدارة وتنفيذ المشاريع",
+    "en": "Project Management & Execution"
+   },
+   "description": {
+    "ar": "إدارة متكاملة للمشروع تشمل التخطيط والتنسيق ومتابعة البرنامج الزمني والإشراف على التنفيذ حتى التسليم.",
+    "en": "End-to-end project management covering planning, coordination, schedule control and site supervision through to handover."
+   }
+  },
+  {
+   "title": {
+    "ar": "المباني السكنية والتجارية",
+    "en": "Residential & Commercial Buildings"
+   },
+   "description": {
+    "ar": "تنفيذ الفلل والمباني السكنية والتجارية وفق المخططات والمواصفات المعتمدة ومتطلبات المالك.",
+    "en": "Construction of villas, residential and commercial buildings to approved drawings, specifications and owner requirements."
+   }
+  },
+  {
+   "title": {
+    "ar": "المصانع والمستودعات",
+    "en": "Factories & Warehouses"
+   },
+   "description": {
+    "ar": "تنفيذ المشاريع الصناعية والمستودعات مع مراعاة المتطلبات الإنشائية والتشغيلية والسلامة.",
+    "en": "Industrial facilities and warehouses built around structural, operational and safety requirements."
+   }
+  },
+  {
+   "title": {
+    "ar": "التشطيب والإشراف الهندسي",
+    "en": "Finishing & Engineering Supervision"
+   },
+   "description": {
+    "ar": "أعمال التشطيب والإشراف الهندسي ومراقبة جودة التنفيذ حتى الوصول إلى مرحلة التسليم النهائي.",
+    "en": "Finishing works, engineering supervision and quality control all the way to final handover."
+   }
+  }
+ ],
+ "team": [
+  {
+   "name": {
+    "ar": "الإدارة التنفيذية",
+    "en": "Executive Management"
+   },
+   "role": {
+    "ar": "التوجيه والتعاقد ومتابعة رضا العملاء",
+    "en": "Direction, contracts and client satisfaction"
+   }
+  },
+  {
+   "name": {
+    "ar": "الإدارة الهندسية",
+    "en": "Engineering Department"
+   },
+   "role": {
+    "ar": "التصورات والمخططات وتنسيق الاعتمادات",
+    "en": "Concepts, drawings and approvals"
+   }
+  },
+  {
+   "name": {
+    "ar": "إدارة المشاريع والتنفيذ",
+    "en": "Projects & Execution"
+   },
+   "role": {
+    "ar": "إدارة المواقع والبرامج الزمنية",
+    "en": "Site management and schedules"
+   }
+  },
+  {
+   "name": {
+    "ar": "الجودة والسلامة",
+    "en": "Quality & Safety"
+   },
+   "role": {
+    "ar": "فحص الأعمال والمواد وإجراءات السلامة",
+    "en": "Inspection of works, materials and site safety"
+   }
+  }
+ ],
+ "legacyTeamNames": [
+  "م. خالد العتيبي",
+  "م. سارة القحطاني",
+  "م. فهد الزهراني",
+  "أ. نورة الحربي"
+ ],
+ "content": {
+  "heroTitle": {
+   "ar": "نبني بثقة..\nمن الفكرة إلى التسليم",
+   "en": "Building with Trust..\nFrom Concept to Handover"
+  },
+  "heroSubtitle": {
+   "ar": "شركة سعودية متخصصة في تنفيذ وإدارة المشاريع الإنشائية والسكنية والتجارية والصناعية، بمنهجية واضحة تضبط الجودة والوقت والتكلفة في كافة مناطق المملكة.",
+   "en": "A Saudi company specialised in executing and managing construction, residential, commercial and industrial projects, with a clear methodology that controls quality, time and cost across the Kingdom."
+  },
+  "aboutStory": [
+   {
+    "ar": "العمران الذهبية للمقاولات العامة شركة سعودية متخصصة في تنفيذ وإدارة المشاريع الإنشائية والسكنية والتجارية والصناعية. انطلقت أعمالنا من جدة عام 2009 بتركيز على المشاريع السكنية عالية الجودة، وبأساس مهني يعتمد على الدقة في التنفيذ وخدمة العميل.",
+    "en": "Alomran Al-Dhahabiya General Contracting is a Saudi company specialised in executing and managing construction, residential, commercial and industrial projects. We started in Jeddah in 2009 with a focus on high-quality residential work, built on precise execution and client service."
+   },
+   {
+    "ar": "توسعت أعمالنا تدريجياً من الفلل إلى المباني السكنية متعددة الوحدات والمشاريع التجارية، ثم المصانع والمستودعات، وصولاً إلى مشاريع في مختلف مناطق المملكة. وفي كل مرحلة حافظنا على منهجية تنفيذ واضحة ورقابة مستمرة على الجودة.",
+    "en": "We grew step by step from villas to multi-unit residential and commercial buildings, then factories and warehouses, and today projects across the Kingdom. At every stage we kept a clear execution methodology and continuous quality control."
+   },
+   {
+    "ar": "نجمع بين الخبرة الميدانية والإدارة الهندسية المنضبطة لنقدم حلولاً عملية تحافظ على جودة التنفيذ، وتضبط الوقت والتكلفة، وتُبقي التواصل مع العميل واضحاً في جميع مراحل المشروع.",
+    "en": "We combine field experience with disciplined engineering management to deliver practical solutions that protect quality, control time and cost, and keep communication with the client clear at every stage."
+   }
+  ],
+  "mission": {
+   "ar": "تقديم خدمات مقاولات متكاملة تبدأ من التخطيط والتصميم والإشراف، وتمتد إلى التنفيذ والتشطيب والتسليم، من خلال منهجية عمل واضحة، مع الالتزام بالجودة والسلامة والجدول الزمني وشفافية التعامل.",
+   "en": "To deliver integrated contracting services from planning, design and supervision through execution, finishing and handover, using a clear methodology and a firm commitment to quality, safety, schedule and transparency."
+  },
+  "vision": {
+   "ar": "أن نكون من الجهات الموثوقة والرائدة في قطاع المقاولات بالمملكة العربية السعودية، وأن يرتبط اسم العمران بالجودة والانضباط والالتزام، وبمشاريع تحقق قيمة حقيقية ومستدامة لعملائنا وشركائنا.",
+   "en": "To be one of the most trusted and leading names in Saudi contracting, with Alomran associated with quality, discipline and commitment, and with projects that create real, lasting value for our clients and partners."
+  },
+  "values": [
+   {
+    "title": {
+     "ar": "الجودة أولاً",
+     "en": "Quality First"
+    },
+    "description": {
+     "ar": "نراجع مراحل التنفيذ والمواد والأعمال المنجزة لضمان جودة متسقة في جميع مراحل المشروع.",
+     "en": "We review execution stages, materials and completed works to ensure consistent quality throughout the project."
+    }
+   },
+   {
+    "title": {
+     "ar": "الالتزام بالمواعيد",
+     "en": "On-Time Commitment"
+    },
+    "description": {
+     "ar": "نعتمد برامج زمنية واضحة ونراقب تقدم الأعمال لمعالجة الانحرافات مبكراً والحفاظ على موعد التسليم.",
+     "en": "Clear schedules and continuous progress tracking let us correct deviations early and protect the handover date."
+    }
+   },
+   {
+    "title": {
+     "ar": "الشفافية",
+     "en": "Transparency"
+    },
+    "description": {
+     "ar": "نحرص على وضوح نطاق العمل والتكاليف والمراحل التنفيذية، مع إبقاء العميل على اطلاع مستمر بحالة المشروع.",
+     "en": "Clear scope, costs and execution stages, with the client kept informed of project status at all times."
+    }
+   },
+   {
+    "title": {
+     "ar": "السلامة والمسؤولية",
+     "en": "Safety & Responsibility"
+    },
+    "description": {
+     "ar": "سلامة العاملين والموقع والمستخدمين جزء أساسي من جودة المشروع ومسؤوليتنا المهنية.",
+     "en": "The safety of workers, sites and end users is an essential part of project quality and our professional duty."
+    }
+   }
+  ],
+  "timeline": [
+   {
+    "year": "2009",
+    "title": {
+     "ar": "التأسيس في جدة",
+     "en": "Founded in Jeddah"
+    },
+    "description": {
+     "ar": "انطلقت أعمال العمران بتركيز على المشاريع السكنية عالية الجودة، مع بناء أساس مهني يعتمد على الدقة في التنفيذ وخدمة العميل.",
+     "en": "Alomran started with a focus on high-quality residential projects, building a professional base of precise execution and client service."
+    }
+   },
+   {
+    "year": "2014",
+    "title": {
+     "ar": "التوسع في المباني التجارية",
+     "en": "Expansion into Commercial Buildings"
+    },
+    "description": {
+     "ar": "توسعت الأعمال لتشمل المباني السكنية متعددة الوحدات والمشاريع التجارية، مع تطوير قدرات إدارة المواقع ومتابعة التنفيذ.",
+     "en": "Work expanded to multi-unit residential and commercial projects, alongside stronger site management and execution follow-up."
+    }
+   },
+   {
+    "year": "2018",
+    "title": {
+     "ar": "التوسع في القطاع الصناعي",
+     "en": "Entering the Industrial Sector"
+    },
+    "description": {
+     "ar": "إضافة المصانع والمستودعات إلى نطاق الأعمال، مع تعزيز منهجيات السلامة وإدارة متطلبات المشاريع الصناعية.",
+     "en": "Factories and warehouses were added to our scope, with reinforced safety practices and industrial project management."
+    }
+   },
+   {
+    "year": "2022",
+    "title": {
+     "ar": "التوسع على مستوى المملكة",
+     "en": "Kingdom-Wide Expansion"
+    },
+    "description": {
+     "ar": "امتدت أعمال الشركة إلى مناطق ومدن مختلفة من المملكة، مع الحفاظ على مستوى ثابت من الجودة والانضباط في التنفيذ.",
+     "en": "Operations extended to regions and cities across the Kingdom while keeping a consistent level of quality and discipline."
+    }
+   },
+   {
+    "year": "2026",
+    "title": {
+     "ar": "أكثر من 250 مشروعاً منجزاً",
+     "en": "Over 250 Completed Projects"
+    },
+    "description": {
+     "ar": "تمتد أعمال العمران اليوم إلى كافة مناطق المملكة العربية السعودية، بخبرة متراكمة ومنهجية تنفيذ تركز على الجودة والالتزام ورضا العملاء.",
+     "en": "Alomran now works across all regions of Saudi Arabia, with accumulated experience and a methodology focused on quality, commitment and client satisfaction."
+    }
+   }
+  ],
+  "certifications": [
+   {
+    "ar": "سجل مقاولين معتمد",
+    "en": "Registered contractor"
+   },
+   {
+    "ar": "عضوية الغرفة التجارية الصناعية بجدة",
+    "en": "Member of the Jeddah Chamber of Commerce"
+   },
+   {
+    "ar": "الالتزام بكود البناء السعودي",
+    "en": "Compliance with the Saudi Building Code"
+   },
+   {
+    "ar": "تأمين شامل على المواقع والعمالة أثناء التنفيذ",
+    "en": "Comprehensive site and workforce insurance during execution"
+   }
+  ],
+  "footerTagline": {
+   "ar": "شركة سعودية متخصصة في تنفيذ وإدارة المشاريع السكنية والتجارية والصناعية. نبني بثقة، من الفكرة إلى التسليم.",
+   "en": "A Saudi company executing and managing residential, commercial and industrial projects. We build with trust, from concept to handover."
+  }
+ },
+ "legacyFooterTaglineAr": "شركة مقاولات سعودية متخصصة في الفلل والمباني السكنية والتجارية والمصانع. نبني بثقة، ونسلم في الوقت.",
+ "cannedReplies": [
+  {
+   "id": "cr_salam",
+   "keywords": [
+    "السلام عليكم",
+    "سلام عليكم",
+    "السلام",
+    "سلام"
+   ],
+   "reply": "وعليكم السلام ورحمة الله وبركاته 🌷\nأهلاً وسهلاً بك في العمران الذهبية للمقاولات العامة، ويسعدنا تواصلك معنا.\nكيف يمكنني خدمتك اليوم؟",
+   "enabled": true
+  },
+  {
+   "id": "cr_morning",
+   "keywords": [
+    "صباح الخير",
+    "صباح الخيرات"
+   ],
+   "reply": "صباح النور والسرور ☀️\nأهلاً بك في العمران الذهبية للمقاولات العامة، كيف يمكنني خدمتك اليوم؟",
+   "enabled": true
+  },
+  {
+   "id": "cr_evening",
+   "keywords": [
+    "مساء الخير",
+    "مساء الخيرات"
+   ],
+   "reply": "مساء النور والسرور 🌙\nأهلاً بك في العمران الذهبية للمقاولات العامة، كيف يمكنني خدمتك اليوم؟",
+   "enabled": true
+  },
+  {
+   "id": "cr_hello",
+   "keywords": [
+    "مرحبا",
+    "مرحباً",
+    "اهلا",
+    "أهلا",
+    "هلا",
+    "hello",
+    "hi"
+   ],
+   "reply": "أهلاً وسهلاً بك في العمران الذهبية للمقاولات العامة 👋\nيسعدنا تواصلك معنا. يمكنك السؤال عن خدماتنا، أو طلب عرض سعر لمشروعك، أو التحدث مع أحد موظفينا. كيف يمكنني مساعدتك؟",
+   "enabled": true
+  },
+  {
+   "id": "cr_thanks",
+   "keywords": [
+    "شكرا",
+    "شكراً",
+    "مشكور",
+    "يعطيك العافية",
+    "الله يعطيك العافية",
+    "thanks",
+    "thank you"
+   ],
+   "reply": "العفو، سعدنا بخدمتك 🌷\nإذا احتجت أي مساعدة أخرى فنحن هنا دائماً.",
+   "enabled": true
+  },
+  {
+   "id": "cr_hours",
+   "keywords": [
+    "ساعات العمل",
+    "اوقات العمل",
+    "أوقات العمل",
+    "اوقات الدوام",
+    "أوقات الدوام",
+    "متى تفتحون",
+    "الدوام"
+   ],
+   "reply": "ساعات العمل لدينا من الأحد إلى الخميس، من 8:00 صباحاً حتى 5:00 مساءً.\nويمكنك ترك رسالتك في أي وقت وسيتواصل معك فريقنا في أقرب وقت.",
+   "enabled": true
+  },
+  {
+   "id": "cr_location",
+   "keywords": [
+    "موقعكم",
+    "وين موقعكم",
+    "وين مكانكم",
+    "عنوانكم",
+    "العنوان",
+    "اين تقعون",
+    "أين تقعون"
+   ],
+   "reply": "يسعدنا زيارتك! تجد موقعنا على الخريطة في قسم «تواصل معنا» أسفل الصفحة الرئيسية، ويمكنك الضغط عليها لفتح الموقع في خرائط جوجل.",
+   "enabled": true
+  }
+ ],
+ "fontIds": [
+  "IBMPlexSansArabic",
+  "ClashDisplay",
+  "EmadDianaExtra",
+  "StolzlBook"
+ ],
+ "fontRoles": [
+  "heading",
+  "subheading",
+  "body",
+  "buttons"
+ ],
+ "defaultFonts": {
+  "heading": {
+   "source": "preset",
+   "value": "IBMPlexSansArabic"
+  },
+  "subheading": {
+   "source": "preset",
+   "value": "IBMPlexSansArabic"
+  },
+  "body": {
+   "source": "preset",
+   "value": "IBMPlexSansArabic"
+  },
+  "buttons": {
+   "source": "preset",
+   "value": "IBMPlexSansArabic"
+  }
+ },
+ "sizeKeys": [
+  "h1",
+  "h2",
+  "body"
+ ],
+ "works": [
+  {
+   "title": {
+    "ar": "فيلا النخيل",
+    "en": "Al Nakheel Villa"
+   },
+   "city": {
+    "ar": "جدة",
+    "en": "Jeddah"
+   },
+   "category": "residential",
+   "meta": {
+    "ar": "تسليم مفتاح",
+    "en": "Turnkey"
+   },
+   "area": {
+    "ar": "520 م²",
+    "en": "520 m²"
+   },
+   "description": {
+    "ar": "فيلا سكنية نُفذت تسليم مفتاح، من الهيكل الإنشائي حتى التشطيبات الداخلية والخارجية، وفق المخططات المعتمدة ومتطلبات المالك.",
+    "en": "A turnkey residential villa, from structure to interior and exterior finishes, built to the approved drawings and owner requirements."
+   },
+   "images": [
+    "/images/default-work-1-1.jpg",
+    "/images/default-work-1-2.jpg",
+    "/images/default-work-1-3.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "مصنع الأطياف",
+    "en": "Al Atyaf Factory"
+   },
+   "city": {
+    "ar": "جدة",
+    "en": "Jeddah"
+   },
+   "category": "industrial",
+   "meta": {
+    "ar": "صناعي / مستودعات",
+    "en": "Industrial / Warehousing"
+   },
+   "area": {
+    "ar": "3,200 م²",
+    "en": "3,200 m²"
+   },
+   "description": {
+    "ar": "منشأة صناعية مع مساحات تخزين، رُوعيت فيها المتطلبات الإنشائية والتشغيلية وإجراءات السلامة.",
+    "en": "An industrial facility with storage space, designed around structural, operational and safety requirements."
+   },
+   "images": [
+    "/images/default-work-2-1.jpg",
+    "/images/default-work-2-2.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "لوجستك بارك",
+    "en": "Logistic Park"
+   },
+   "city": {
+    "ar": "الدمام",
+    "en": "Dammam"
+   },
+   "category": "industrial",
+   "meta": {
+    "ar": "مستودعات",
+    "en": "Warehouses"
+   },
+   "area": {
+    "ar": "4,600 م²",
+    "en": "4,600 m²"
+   },
+   "description": {
+    "ar": "مستودعات لوجستية بمساحات تخزين وساحات حركة وتحميل، مع متابعة البرنامج الزمني حتى التسليم.",
+    "en": "Logistics warehouses with storage, circulation and loading yards, delivered on a tracked schedule."
+   },
+   "images": [
+    "/images/default-work-3-1.jpg",
+    "/images/default-work-3-2.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "فيلا الياسمين",
+    "en": "Al Yasmin Villa"
+   },
+   "city": {
+    "ar": "الخبر",
+    "en": "Khobar"
+   },
+   "category": "residential",
+   "meta": {
+    "ar": "تسليم مفتاح",
+    "en": "Turnkey"
+   },
+   "area": {
+    "ar": "610 م²",
+    "en": "610 m²"
+   },
+   "description": {
+    "ar": "فيلا سكنية حديثة نُفذت تسليم مفتاح بعناية بالتفاصيل وجودة التشطيب.",
+    "en": "A modern turnkey villa delivered with attention to detail and finishing quality."
+   },
+   "images": [
+    "/images/default-work-4-1.jpg",
+    "/images/default-work-4-2.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "مجمع مستودعات الشرق",
+    "en": "Al Sharq Warehouse Complex"
+   },
+   "city": {
+    "ar": "الدمام",
+    "en": "Dammam"
+   },
+   "category": "industrial",
+   "meta": {
+    "ar": "مستودعات لوجستية",
+    "en": "Logistics Warehouses"
+   },
+   "area": {
+    "ar": "5,100 م²",
+    "en": "5,100 m²"
+   },
+   "description": {
+    "ar": "مجمع مستودعات لوجستية متعدد الوحدات، مع إدارة الموقع وتنسيق الأعمال ومراقبة الجودة في كل مرحلة.",
+    "en": "A multi-unit logistics warehouse complex, with site management, trade coordination and quality control at every stage."
+   },
+   "images": [
+    "/images/default-work-5-1.jpg",
+    "/images/default-work-5-2.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "مركز النخبة التجاري",
+    "en": "Al Nokhba Commercial Center"
+   },
+   "city": {
+    "ar": "الخبر",
+    "en": "Khobar"
+   },
+   "category": "commercial",
+   "meta": {
+    "ar": "معارض ومكاتب",
+    "en": "Showrooms & Offices"
+   },
+   "area": {
+    "ar": "1,600 م²",
+    "en": "1,600 m²"
+   },
+   "description": {
+    "ar": "مبنى تجاري يضم معارض ومكاتب، نُفذ وفق المواصفات المعتمدة مع تشطيبات تناسب الاستخدام التجاري.",
+    "en": "A commercial building with showrooms and offices, built to approved specifications with finishes suited to commercial use."
+   },
+   "images": [
+    "/images/default-work-6-1.jpg",
+    "/images/default-work-6-2.jpg"
+   ]
+  },
+  {
+   "title": {
+    "ar": "مصنع الجبيل الصناعي",
+    "en": "Jubail Industrial Plant"
+   },
+   "city": {
+    "ar": "الجبيل",
+    "en": "Jubail"
+   },
+   "category": "industrial",
+   "meta": {
+    "ar": "صناعي / بتروكيماويات مساندة",
+    "en": "Industrial / Petrochemical Support"
+   },
+   "area": {
+    "ar": "3,800 م²",
+    "en": "3,800 m²"
+   },
+   "description": {
+    "ar": "منشأة صناعية مساندة لقطاع البتروكيماويات، بتطبيق إجراءات سلامة تناسب طبيعة الموقع والأعمال.",
+    "en": "An industrial facility supporting the petrochemical sector, with safety procedures suited to the site and works."
+   },
+   "images": [
+    "/images/default-work-7-1.jpg",
+    "/images/default-work-7-2.jpg"
+   ]
+  }
+ ]
+}
