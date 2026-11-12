@@ -627,6 +627,8 @@ function guard_admin_page(string $name): void {
     $hasUsers = (bool)get_users();
     if ($name === 'login' && !$hasUsers) redirect('/setup');
     if ($name === 'setup' && $hasUsers) redirect('/login');
+    // رمز التهيئة يُنشأ عند فتح صفحة الإعداد ليجده المالك في data/bootstrap-token.txt
+    if ($name === 'setup' || ($name === 'developer-setup' && !get_developers())) bootstrap_token();
     if ($name === 'dashboard') {
         $id = session_user_id();
         $u = $id ? find_user($id) : null;

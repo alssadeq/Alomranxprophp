@@ -1,5 +1,4 @@
 /data/
 /backups/
-/app/config.php
 *.tmp
 .DS_Store
