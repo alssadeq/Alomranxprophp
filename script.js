@@ -839,6 +839,17 @@ const PAGE_SECTION_MAPS = {
     grid: { root: '#pg-projects-grid', box: '.project-card', titleId: 'pg-projects-grid-title' },
     cta: { root: '#pg-projects-cta', box: '.cta-band-inner', titleId: 'pg-projects-cta-title', contentId: 'pg-projects-cta-content' },
   },
+  methodology: {
+    pageHero: { root: '#pg-methodology-pageHero', box: null, skipText: true },
+    phases: { root: '#phases', box: '.process-step, .phase-card', skipText: true },
+    quality: { root: '#quality', box: '.why-item, .value-card', skipText: true },
+    faq: { root: '#faq', box: 'details', skipText: true },
+    cta: { root: '#pg-methodology-cta', box: '.cta-band-inner', skipText: true },
+  },
+  privacy: {
+    pageHero: { root: '#pg-privacy-pageHero', box: null, skipText: true },
+    content: { root: '#pg-privacy-content', box: null, skipText: true },
+  },
 };
 
 // يكتشف الصفحة الحالية تلقائياً حسب العناصر الموجودة، دون حاجة لتمرير اسمها يدوياً في كل صفحة
@@ -846,10 +857,53 @@ function detectCurrentPageKey() {
   if (document.getElementById('home')) return 'home';
   if (document.getElementById('pg-about-pageHero')) return 'about';
   if (document.getElementById('pg-projects-pageHero')) return 'projects';
+  if (document.getElementById('pg-methodology-pageHero')) return 'methodology';
+  if (document.getElementById('pg-privacy-pageHero')) return 'privacy';
   return null;
 }
 
-function applySectionSettings(pageSections) {
+/* =========================================================
+   البنرات المضافة من لوحة التحكم داخل أقسام أي صفحة: صورة (مع صورة
+   خاصة للجوال اختيارياً) وعنوان ونص وزر ورابط، وتأخذ مكانها بين أقسام
+   الصفحة حسب الترتيب المحفوظ، ويمكن إخفاؤها.
+   ========================================================= */
+function safeBannerUrl(u) {
+  u = String(u || '').trim();
+  return /^(https?:\/\/|\/|tel:|mailto:)/i.test(u) ? u : '';
+}
+function renderCustomBanners(list) {
+  const parent = document.querySelector('main');
+  if (!parent) return;
+  const seen = new Set();
+  (list || []).forEach((b) => {
+    if (!b || !b.id) return;
+    const domId = 'cb-' + String(b.id).replace(/[^\w-]/g, '');
+    seen.add(domId);
+    let el = document.getElementById(domId);
+    if (!el) {
+      el = document.createElement('section');
+      el.id = domId;
+      parent.appendChild(el);
+    }
+    const hasImage = !!(b.image || b.imageMobile);
+    el.className = `custom-banner cb-h-${['sm', 'md', 'lg'].includes(b.height) ? b.height : 'md'}${b.overlay === false ? ' cb-no-overlay' : ''}${hasImage ? '' : ' cb-no-image'}`;
+    el.style.display = b.visible === false ? 'none' : '';
+    const title = pick(b.title), sub = pick(b.subtitle), btn = pick(b.buttonText);
+    const link = safeBannerUrl(b.link);
+    const ext = /^https?:\/\//i.test(link) && !link.includes(location.host);
+    const target = ext ? ' target="_blank" rel="noopener"' : '';
+    const img = hasImage ? `<picture>${b.imageMobile ? `<source media="(max-width: 700px)" srcset="${escapeAttr(b.imageMobile)}">` : ''}<img src="${escapeAttr(b.image || b.imageMobile)}" alt="${escapeAttr(title || 'بنر')}" loading="lazy"></picture>` : '';
+    const text = (title || sub || (btn && link)) ? `<div class="cb-text container">${title ? `<h2>${escapeHtmlText(title)}</h2>` : ''}${sub ? `<p>${escapeHtmlText(sub)}</p>` : ''}${btn && link ? `<a class="btn btn-sand cb-btn" href="${escapeAttr(link)}"${target}>${escapeHtmlText(btn)}</a>` : ''}</div>` : '';
+    // بدون زر: البنر كله قابل للضغط إن كان له رابط
+    const inner = `<div class="cb-inner">${img}${text}</div>`;
+    el.innerHTML = link && !btn ? `<a class="cb-link" href="${escapeAttr(link)}"${target} aria-label="${escapeAttr(title || 'بنر')}">${inner}</a>` : inner;
+  });
+  parent.querySelectorAll('.custom-banner').forEach((el) => { if (!seen.has(el.id)) el.remove(); });
+}
+function escapeAttr(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function escapeHtmlText(v) { return escapeAttr(v).replace(/\n/g, '<br>'); }
+
+function applySectionSettings(pageSections, customBanners) {
   if (!pageSections) return;
   const pageKey = detectCurrentPageKey();
   if (!pageKey) return;
@@ -857,16 +911,18 @@ function applySectionSettings(pageSections) {
   const domMap = PAGE_SECTION_MAPS[pageKey];
   if (!sections || !domMap) return;
 
-  // ترتيب الأقسام بالصفحة حسب الترتيب المحفوظ من لوحة التحكم (سحب وإفلات)
-  const orderedKeys = Object.keys(domMap).slice().sort((a, b) => {
-    const oa = (sections[a] && sections[a].order) || 0;
-    const ob = (sections[b] && sections[b].order) || 0;
-    return oa - ob;
-  });
+  // البنرات المضافة لهذه الصفحة (من لوحة التحكم ← أقسام الصفحات)
+  const banners = (customBanners && customBanners[pageKey]) || [];
+  renderCustomBanners(banners);
+
+  // ترتيب الأقسام والبنرات بالصفحة حسب الترتيب المحفوظ من لوحة التحكم
+  const items = Object.keys(domMap).map(key => ({ sel: domMap[key].root, order: (sections[key] && sections[key].order) || 0 }))
+    .concat(banners.map(b => ({ sel: '#cb-' + String(b.id).replace(/[^\w-]/g, ''), order: Number(b.order) || 0 })));
+  items.sort((a, b) => a.order - b.order);
   const parent = document.querySelector('main');
   if (parent) {
-    orderedKeys.forEach((key) => {
-      const root = document.querySelector(domMap[key].root);
+    items.forEach((it) => {
+      const root = document.querySelector(it.sel);
       if (root && root.parentElement === parent) parent.appendChild(root);
     });
   }
@@ -1366,13 +1422,13 @@ function revealSite() {
       applyTeam(settings.team);
       applyContent(settings.content);
       // صور الأقسام وخلفياتها تُطبَّق فوراً (ثم مرة أخرى بعد بناء بطاقات الأعمال)
-      applySectionSettings(settings.pageSections);
+      applySectionSettings(settings.pageSections, settings.customBanners);
     }
     const projectLogo = settings ? settings.projectLogo : null;
     await renderFeaturedWorks(projectLogo);
     await renderAllWorks(projectLogo);
     // بعد بناء بطاقات الأعمال ديناميكياً، حتى يجد لون "صندوق" القسم بطاقات فعلية يطبّق عليها
-    if (settings) applySectionSettings(settings.pageSections);
+    if (settings) applySectionSettings(settings.pageSections, settings.customBanners);
   }
 
   dynamicRerenderFn = renderAll; // يُستدعى تلقائياً عند تبديل اللغة

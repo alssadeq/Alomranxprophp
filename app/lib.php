@@ -196,7 +196,10 @@ const PAGE_SECTION_KEYS = [
     'home' => ['banners', 'hero', 'about', 'services', 'stats', 'process', 'projects', 'whyUs', 'testimonials', 'cta', 'contact'],
     'about' => ['pageHero', 'story', 'missionVision', 'values', 'expertise', 'timeline', 'team', 'certifications', 'licenses', 'awards', 'partners', 'cta'],
     'projects' => ['pageHero', 'grid', 'cta'],
+    'methodology' => ['pageHero', 'phases', 'quality', 'faq', 'cta'],
+    'privacy' => ['pageHero', 'content'],
 ];
+const CUSTOM_BANNER_HEIGHTS = ['sm', 'md', 'lg'];
 
 function default_section_config($order): array {
     return [
@@ -305,6 +308,14 @@ function get_settings(): array {
             if (!array_key_exists('visible', $s['pageSections'][$page][$key])) $s['pageSections'][$page][$key]['visible'] = true;
             if (!array_key_exists('order', $s['pageSections'][$page][$key])) $s['pageSections'][$page][$key]['order'] = $i;
         }
+    }
+    // البنرات المضافة من لوحة التحكم داخل أقسام كل صفحة (قائمة لكل صفحة)
+    $cb = is_array($s['customBanners'] ?? null) ? obj($s['customBanners']) : [];
+    $s['customBanners'] = [];
+    foreach (array_keys(PAGE_SECTION_KEYS) as $page) {
+        $list = [];
+        foreach ((is_list($cb[$page] ?? null) ? $cb[$page] : []) as $b) if (is_array($b) && !empty($b['id'])) $list[] = $b;
+        $s['customBanners'][$page] = $list;
     }
     $s['content'] = fill_content_defaults($s['content'] ?? null);
     foreach (['content', 'welcomeMessage', 'services', 'team', 'pageSections', 'banners'] as $k) {

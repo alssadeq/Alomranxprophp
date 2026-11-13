@@ -675,11 +675,18 @@ function api_sections_reorder(string $page): void {
     require_admin();
     if (!isset(PAGE_SECTION_KEYS[$page])) send_json(['error' => 'صفحة غير معروفة.'], 400);
     $order = json_body()['order'] ?? null;
+    $bannerIds = array_column(get_settings()['customBanners'][$page] ?? [], 'id');
     $valid = is_list($order);
-    if ($valid) foreach ($order as $k) if (!is_string($k) || !in_array($k, PAGE_SECTION_KEYS[$page], true)) $valid = false;
+    if ($valid) foreach ($order as $k) if (!is_string($k) || (!in_array($k, PAGE_SECTION_KEYS[$page], true) && !in_array($k, $bannerIds, true))) $valid = false;
     if (!$valid) send_json(['error' => 'أرسل ترتيباً صحيحاً يشمل كل أقسام هذه الصفحة.'], 400);
-    $s = settings_mutate(function (&$s) use ($page, $order) { foreach ($order as $i => $k) $s['pageSections'][$page][$k]['order'] = $i; });
-    send_json(['ok' => true, 'sections' => $s['pageSections'][$page]]);
+    // الأقسام والبنرات المضافة تتشارك نفس الترتيب
+    $s = settings_mutate(function (&$s) use ($page, $order) {
+        foreach ($order as $i => $k) {
+            if (in_array($k, PAGE_SECTION_KEYS[$page], true)) { $s['pageSections'][$page][$k]['order'] = $i; continue; }
+            foreach ($s['customBanners'][$page] as $j => $b) if ($b['id'] === $k) $s['customBanners'][$page][$j]['order'] = $i;
+        }
+    });
+    send_json(['ok' => true, 'sections' => $s['pageSections'][$page], 'banners' => $s['customBanners'][$page]]);
 }
 
 function api_settings_welcome(): void {
@@ -964,4 +971,110 @@ function api_social_import(): void {
     $db = ['items' => $items, 'nextId' => max($max + 1, (int)str_val($b['nextId'] ?? '') ?: 1)];
     with_lock('social', fn() => write_json('social_platforms.json', $db));
     send_json(['ok' => true, 'count' => count($items)]);
+}
+
+/* ---------- البنرات المضافة داخل أقسام الصفحات ---------- */
+
+function custom_banner_fields(array $b, array $in): array {
+    foreach (['title' => 120, 'subtitle' => 300, 'buttonText' => 40] as $k => $n) {
+        if (array_key_exists($k, $in)) { $x = bi($in[$k], $b[$k] ?? null); $b[$k] = ['ar' => mb_slice(trim($x['ar']), $n), 'en' => mb_slice(trim($x['en']), $n)]; }
+    }
+    if (array_key_exists('link', $in)) {
+        $l = trim(str_val($in['link']));
+        if ($l !== '' && !(preg_match('#^https?://[^\s"\'<>]+$#i', $l) || preg_match('#^/[^\s"\'<>]*$#', $l) || preg_match('#^(tel:|mailto:|https://wa\.me/)#i', $l))) {
+            send_json(['error' => 'رابط البنر يجب أن يبدأ بـ https:// أو يكون صفحة داخلية تبدأ بـ /'], 400);
+        }
+        $b['link'] = mb_slice($l, 600);
+    }
+    if (array_key_exists('visible', $in)) $b['visible'] = (bool)$in['visible'];
+    if (array_key_exists('overlay', $in)) $b['overlay'] = (bool)$in['overlay'];
+    if (array_key_exists('height', $in) && in_array($in['height'], CUSTOM_BANNER_HEIGHTS, true)) $b['height'] = $in['height'];
+    return $b;
+}
+
+function custom_banner_page(string $page): void {
+    if (!isset(PAGE_SECTION_KEYS[$page])) send_json(['error' => 'صفحة غير معروفة.'], 400);
+}
+
+// إضافة بنر: يوضع بعد القسم المختار (after) أو في نهاية الصفحة
+function api_custom_banner_create(string $page): void {
+    require_admin();
+    custom_banner_page($page);
+    $b = json_body();
+    $banner = null;
+    settings_mutate(function (&$s) use ($page, $b, &$banner) {
+        if (count($s['customBanners'][$page]) >= 20) return [400, 'الحد الأقصى 20 بنراً في الصفحة الواحدة.'];
+        // ترتيب كل عناصر الصفحة (أقسام وبنرات) ثم إعادة ترقيمها بعد إدراج البنر الجديد
+        $items = [];
+        foreach (PAGE_SECTION_KEYS[$page] as $k) $items[] = ['k' => $k, 'o' => (float)($s['pageSections'][$page][$k]['order'] ?? 0)];
+        foreach ($s['customBanners'][$page] as $cb) $items[] = ['k' => $cb['id'], 'o' => (float)($cb['order'] ?? 0)];
+        usort($items, fn($a, $c) => $a['o'] <=> $c['o']);
+        $keys = array_column($items, 'k');
+        $id = 'cb_' . rand_hex(5);
+        $after = str_val($b['after'] ?? '');
+        $pos = $after === 'top' ? 0 : (($i = array_search($after, $keys, true)) !== false ? $i + 1 : count($keys));
+        array_splice($keys, $pos, 0, [$id]);
+        $banner = custom_banner_fields(['id' => $id, 'title' => ['ar' => '', 'en' => ''], 'subtitle' => ['ar' => '', 'en' => ''], 'buttonText' => ['ar' => '', 'en' => ''],
+            'link' => '', 'image' => '', 'imageMobile' => '', 'visible' => true, 'overlay' => true, 'height' => 'md', 'order' => 0, 'createdAt' => now_iso()], $b);
+        $s['customBanners'][$page][] = $banner;
+        foreach ($keys as $i => $k) {
+            if (in_array($k, PAGE_SECTION_KEYS[$page], true)) { $s['pageSections'][$page][$k]['order'] = $i; continue; }
+            foreach ($s['customBanners'][$page] as $j => $cb) if ($cb['id'] === $k) $s['customBanners'][$page][$j]['order'] = $i;
+        }
+        foreach ($s['customBanners'][$page] as $cb) if ($cb['id'] === $id) $banner = $cb;
+        return null;
+    });
+    log_activity('create', 'settings', 'بنر جديد في صفحة ' . $page);
+    send_json(['ok' => true, 'banner' => $banner], 201);
+}
+
+function custom_banner_mutate(string $page, string $id, callable $fn): array {
+    custom_banner_page($page);
+    $out = null;
+    settings_mutate(function (&$s) use ($page, $id, $fn, &$out) {
+        foreach ($s['customBanners'][$page] as $j => $b) {
+            if ($b['id'] !== $id) continue;
+            $s['customBanners'][$page][$j] = $fn($b);
+            $out = $s['customBanners'][$page][$j];
+            return null;
+        }
+        return [404, 'البنر غير موجود.'];
+    });
+    return $out;
+}
+
+function api_custom_banner_update(string $page, string $id): void {
+    require_admin();
+    $in = json_body();
+    $b = custom_banner_mutate($page, $id, fn($b) => custom_banner_fields($b, $in));
+    send_json(['ok' => true, 'banner' => $b]);
+}
+
+// صورة البنر: ?kind=mobile لصورة الجوال، وإلا صورة الكمبيوتر
+function api_custom_banner_image(string $page, string $id, bool $delete = false): void {
+    require_admin();
+    custom_banner_page($page);
+    $field = ($_GET['kind'] ?? '') === 'mobile' ? 'imageMobile' : 'image';
+    $url = $delete ? '' : receive_image();
+    if (!$delete && !$url) send_json(['error' => 'لم يتم إرفاق صورة.'], 400);
+    $old = '';
+    $exists = false;
+    foreach (get_settings()['customBanners'][$page] as $b) if ($b['id'] === $id) $exists = true;
+    if (!$exists) { if ($url) remove_replaced_images([$url], ''); send_json(['error' => 'البنر غير موجود.'], 404); }
+    $b = custom_banner_mutate($page, $id, function ($b) use ($field, $url, &$old) { $old = str_val($b[$field] ?? ''); $b[$field] = $url; return $b; });
+    drop_replaced_images([$old]);
+    send_json(['ok' => true, 'banner' => $b]);
+}
+
+function api_custom_banner_delete(string $page, string $id): void {
+    require_admin();
+    custom_banner_page($page);
+    $removed = null;
+    settings_mutate(function (&$s) use ($page, $id, &$removed) {
+        foreach ($s['customBanners'][$page] as $j => $b) if ($b['id'] === $id) { $removed = $b; array_splice($s['customBanners'][$page], $j, 1); return null; }
+        return [404, 'البنر غير موجود.'];
+    });
+    drop_replaced_images([str_val($removed['image'] ?? ''), str_val($removed['imageMobile'] ?? '')]);
+    log_activity('delete', 'settings', 'حذف بنر من صفحة ' . $page);
+    send_json(['ok' => true]);
 }

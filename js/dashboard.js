@@ -2035,6 +2035,17 @@
         { key: 'grid', label: 'شبكة المشاريع والتصفية', hasText: 'titleOnly', hasImage: false },
         { key: 'cta', label: 'شريط الدعوة للتواصل', hasText: true, hasImage: false },
       ],
+      methodology: [
+        { key: 'pageHero', label: 'رأس الصفحة (العنوان الرئيسي)', hasText: false, hasImage: false },
+        { key: 'phases', label: 'مراحل العمل', hasText: false, hasImage: false },
+        { key: 'quality', label: 'الجودة والسلامة', hasText: false, hasImage: false },
+        { key: 'faq', label: 'الأسئلة الشائعة', hasText: false, hasImage: false },
+        { key: 'cta', label: 'شريط الدعوة للتواصل', hasText: false, hasImage: false },
+      ],
+      privacy: [
+        { key: 'pageHero', label: 'رأس الصفحة (العنوان الرئيسي)', hasText: false, hasImage: false },
+        { key: 'content', label: 'نص سياسة الخصوصية', hasText: false, hasImage: false },
+      ],
     };
     let currentSectionsPage = 'home';
 
@@ -2147,6 +2158,7 @@
         <details class="section-editor-card" data-key="${cfg.key}">
           <summary>
             <span class="sec-drag-handle" draggable="true" title="اسحب لإعادة الترتيب">⋮⋮</span>
+            <span class="sec-move-btns"><button type="button" class="sec-move" data-dir="-1" title="تحريك للأعلى" aria-label="تحريك للأعلى">▲</button><button type="button" class="sec-move" data-dir="1" title="تحريك للأسفل" aria-label="تحريك للأسفل">▼</button></span>
             <label class="sec-visible-toggle">
               <input type="checkbox" class="sec-visible-cb" checked> ظاهر
             </label>
@@ -2211,31 +2223,230 @@
 
       let sections = {};
       let content = {};
+      let banners = [];
       try {
         const settings = await api('/api/settings');
         sections = (settings.pageSections && settings.pageSections[currentSectionsPage]) || {};
         content = settings.content || {};
+        banners = (settings.customBanners && settings.customBanners[currentSectionsPage]) || [];
       } catch (err) {
         container.innerHTML = `<p class="muted">تعذر تحميل إعدادات الأقسام: ${escapeHtml(err.message)}</p>`;
         return;
       }
 
       const configs = PAGE_SECTIONS_CONFIG[currentSectionsPage];
-      const orderedConfigs = configs.slice().sort((a, b) => {
-        const oa = (sections[a.key] && sections[a.key].order) || 0;
-        const ob = (sections[b.key] && sections[b.key].order) || 0;
-        return oa - ob;
+      // الأقسام الثابتة والبنرات المضافة في قائمة واحدة حسب ترتيبها في الصفحة
+      const items = configs.map(cfg => ({ type: 'section', key: cfg.key, cfg, order: (sections[cfg.key] && sections[cfg.key].order) || 0 }))
+        .concat(banners.map(b => ({ type: 'banner', key: b.id, banner: b, order: Number(b.order) || 0 })));
+      items.sort((a, b) => a.order - b.order);
+
+      container.innerHTML = customBannerToolbarTemplate(items) + '<div class="sections-list">' + items.map(it => (it.type === 'section' ? sectionCardTemplate(it.cfg) : customBannerCardTemplate(it.banner))).join('') + '</div>';
+
+      items.forEach((it) => {
+        const card = container.querySelector(`.section-editor-card[data-key="${it.key}"]`);
+        if (it.type === 'section') wireSectionCard(card, it.cfg, sections[it.key] || {}, content);
+        else wireCustomBannerCard(card, it.banner);
       });
 
-      container.innerHTML = orderedConfigs.map(sectionCardTemplate).join('');
+      wireCustomBannerToolbar(container);
+      bindSectionsDragDrop(container.querySelector('.sections-list'));
+      bindSectionsMoveButtons(container.querySelector('.sections-list'));
+    }
 
-      orderedConfigs.forEach((cfg) => {
-        const card = container.querySelector(`[data-key="${cfg.key}"]`);
-        const s = sections[cfg.key] || {};
-        wireSectionCard(card, cfg, s, content);
+    /* ---------- البنرات المضافة داخل أقسام الصفحة ---------- */
+    const CB_HEIGHTS = { sm: 'صغير', md: 'متوسط', lg: 'كبير' };
+
+    function customBannerToolbarTemplate(items) {
+      const opts = items.map(it => `<option value="${escapeHtml(it.key)}">بعد: ${escapeHtml(it.type === 'section' ? it.cfg.label : ('بنر — ' + (biAr(it.banner.title) || 'بدون عنوان')))}</option>`).join('');
+      return `
+        <div class="card cb-toolbar">
+          <div class="cb-toolbar-row">
+            <div class="form-field" style="flex:1; min-width:200px; margin:0;">
+              <label>مكان البنر الجديد في الصفحة</label>
+              <select class="cb-new-position">
+                <option value="top">أعلى الصفحة</option>
+                ${opts}
+                <option value="end" selected>نهاية الصفحة</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-sand cb-add-btn">＋ إضافة بنر جديد</button>
+          </div>
+          <p class="form-note" style="margin:8px 0 0;">بعد الإضافة افتح بطاقة البنر لرفع الصورة وكتابة العنوان والرابط. يمكنك تغيير مكانه في أي وقت بالأسهم ▲▼.</p>
+        </div>`;
+    }
+
+    function wireCustomBannerToolbar(container) {
+      const btn = container.querySelector('.cb-add-btn');
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const after = container.querySelector('.cb-new-position').value;
+          const { banner } = await api(`/api/settings/custom-banners/${currentSectionsPage}`, { method: 'POST', body: JSON.stringify({ after }) });
+          showToast('تمت إضافة البنر. ارفع صورته واكتب محتواه ثم احفظ.');
+          await loadSectionsEditor(currentSectionsPage);
+          const card = document.querySelector(`#sectionsEditor .section-editor-card[data-key="${banner.id}"]`);
+          if (card) { card.open = true; card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        } catch (err) { showToast(err.message); }
+        finally { btn.disabled = false; }
+      });
+    }
+
+    function customBannerCardTemplate(b) {
+      const bi = (cls, label, rows) => `
+        <div class="bi-field">
+          <label>${label}</label>
+          <div class="bi-row"><span class="bi-badge">AR</span>${rows ? `<textarea class="${cls}-ar" rows="${rows}"></textarea>` : `<input type="text" class="${cls}-ar">`}</div>
+          <div class="bi-row"><span class="bi-badge en">EN</span>${rows ? `<textarea class="${cls}-en" rows="${rows}"></textarea>` : `<input type="text" class="${cls}-en">`}</div>
+        </div>`;
+      const imgSlot = (kind, label, hint) => `
+        <div class="cb-image-slot" data-kind="${kind}">
+          <label style="display:block; margin:14px 0 6px; font-weight:600; font-size:13px;">${label}</label>
+          <div class="cb-image-preview"></div>
+          <input type="file" class="cb-image-file" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 ${hint}</p>
+          <button type="button" class="btn btn-outline btn-sm cb-image-remove" hidden>حذف هذه الصورة</button>
+        </div>`;
+      return `
+        <details class="section-editor-card cb-card" data-key="${escapeHtml(b.id)}" data-type="banner">
+          <summary>
+            <span class="sec-drag-handle" draggable="true" title="اسحب لإعادة الترتيب">⋮⋮</span>
+            <span class="sec-move-btns"><button type="button" class="sec-move" data-dir="-1" title="تحريك للأعلى" aria-label="تحريك للأعلى">▲</button><button type="button" class="sec-move" data-dir="1" title="تحريك للأسفل" aria-label="تحريك للأسفل">▼</button></span>
+            <label class="sec-visible-toggle"><input type="checkbox" class="sec-visible-cb" checked> ظاهر</label>
+            <span class="sec-card-label">🖼️ بنر مضاف</span>
+            <span class="sec-card-preview"></span>
+          </summary>
+          <div class="section-editor-body">
+            ${imgSlot('desktop', 'صورة البنر', 'المقاس المقترح: 1920 × 700 بكسل')}
+            ${imgSlot('mobile', 'صورة خاصة للجوال (اختياري)', 'المقاس المقترح: 1080 × 1080 بكسل. إن لم تُرفع تُستخدم صورة البنر نفسها')}
+            ${bi('cb-title', 'العنوان (اختياري)')}
+            ${bi('cb-subtitle', 'النص (اختياري)', 2)}
+            ${bi('cb-btn', 'نص الزر (اختياري)')}
+            <div class="form-field">
+              <label>الرابط عند الضغط (اختياري)</label>
+              <input type="text" class="cb-link" placeholder="/brief أو https://...">
+              <p class="form-note" style="margin-top:4px;">إن كتبت نص الزر يظهر زر بهذا الرابط، وإلا يصبح البنر كله قابلاً للضغط.</p>
+            </div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label>ارتفاع البنر</label>
+                <select class="cb-height">${Object.entries(CB_HEIGHTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+              </div>
+              <div class="form-field">
+                <label>&nbsp;</label>
+                <label class="perm-check"><input type="checkbox" class="cb-overlay"> تظليل الصورة لوضوح النص</label>
+              </div>
+            </div>
+            <div class="cb-actions">
+              <button type="button" class="btn btn-sand cb-save">حفظ البنر</button>
+              <button type="button" class="btn btn-danger cb-delete">حذف البنر</button>
+            </div>
+            <p class="form-note sec-save-msg"></p>
+          </div>
+        </details>`;
+    }
+
+    function wireCustomBannerCard(card, b) {
+      const base = `/api/settings/custom-banners/${currentSectionsPage}/${encodeURIComponent(b.id)}`;
+      const preview = () => { card.querySelector('.sec-card-preview').textContent = biAr(b.title) || (b.image ? '' : 'بدون صورة بعد'); };
+      preview();
+      card.querySelector('.sec-visible-toggle').addEventListener('click', (e) => e.stopPropagation());
+      card.querySelector('.sec-drag-handle').addEventListener('click', (e) => e.stopPropagation());
+
+      const fill = (cls, v) => { setVal(card, `.${cls}-ar`, biAr(v)); setVal(card, `.${cls}-en`, biEn(v)); };
+      fill('cb-title', b.title); fill('cb-subtitle', b.subtitle); fill('cb-btn', b.buttonText);
+      setVal(card, '.cb-link', b.link || '');
+      card.querySelector('.cb-height').value = b.height || 'md';
+      card.querySelector('.cb-overlay').checked = b.overlay !== false;
+
+      const visibleCb = card.querySelector('.sec-visible-cb');
+      visibleCb.checked = b.visible !== false;
+      visibleCb.addEventListener('change', async () => {
+        try {
+          await api(base, { method: 'PUT', body: JSON.stringify({ visible: visibleCb.checked }) });
+          b.visible = visibleCb.checked;
+          showToast(visibleCb.checked ? 'تم إظهار البنر في الصفحة.' : 'تم إخفاء البنر من الصفحة.');
+        } catch (err) { showToast(err.message); visibleCb.checked = !visibleCb.checked; }
       });
 
-      bindSectionsDragDrop(container);
+      const showImages = () => {
+        card.querySelectorAll('.cb-image-slot').forEach((slot) => {
+          const url = slot.dataset.kind === 'mobile' ? b.imageMobile : b.image;
+          slot.querySelector('.cb-image-preview').innerHTML = url ? `<img src="${escapeHtml(url)}" alt="" style="max-width:100%; max-height:160px; border-radius:10px; display:block; margin-bottom:8px;">` : '';
+          slot.querySelector('.cb-image-remove').hidden = !url;
+        });
+        preview();
+      };
+      showImages();
+      card.querySelectorAll('.cb-image-slot').forEach((slot) => {
+        slot.querySelector('.cb-image-remove').addEventListener('click', async () => {
+          if (!confirm('حذف هذه الصورة من البنر؟')) return;
+          try {
+            const r = await api(`${base}/image${slot.dataset.kind === 'mobile' ? '?kind=mobile' : ''}`, { method: 'DELETE' });
+            Object.assign(b, r.banner); showImages(); showToast('تم حذف الصورة.');
+          } catch (err) { showToast(err.message); }
+        });
+      });
+
+      card.querySelector('.cb-save').addEventListener('click', async () => {
+        const msg = card.querySelector('.sec-save-msg');
+        const btn = card.querySelector('.cb-save');
+        const val = (cls) => ({ ar: card.querySelector(`.${cls}-ar`).value.trim(), en: card.querySelector(`.${cls}-en`).value.trim() });
+        btn.disabled = true;
+        msg.textContent = 'جارِ الحفظ...';
+        try {
+          let r = await api(base, { method: 'PUT', body: JSON.stringify({
+            title: val('cb-title'), subtitle: val('cb-subtitle'), buttonText: val('cb-btn'),
+            link: card.querySelector('.cb-link').value.trim(), height: card.querySelector('.cb-height').value,
+            overlay: card.querySelector('.cb-overlay').checked,
+          }) });
+          Object.assign(b, r.banner);
+          for (const slot of card.querySelectorAll('.cb-image-slot')) {
+            const file = slot.querySelector('.cb-image-file').files[0];
+            if (!file) continue;
+            const fd = new FormData();
+            const img = await compressImage(file, slot.dataset.kind === 'mobile' ? 'section' : 'background');
+            fd.append('image', img, img.name);
+            r = await api(`${base}/image${slot.dataset.kind === 'mobile' ? '?kind=mobile' : ''}`, { method: 'PUT', body: fd });
+            Object.assign(b, r.banner);
+            slot.querySelector('.cb-image-file').value = '';
+          }
+          showImages();
+          msg.textContent = 'تم حفظ البنر بنجاح.';
+        } catch (err) { msg.textContent = err.message; }
+        finally { btn.disabled = false; }
+      });
+
+      card.querySelector('.cb-delete').addEventListener('click', async () => {
+        if (!confirm('حذف هذا البنر نهائياً من الصفحة؟')) return;
+        try {
+          await api(base, { method: 'DELETE' });
+          showToast('تم حذف البنر.');
+          await loadSectionsEditor(currentSectionsPage);
+        } catch (err) { showToast(err.message); }
+      });
+    }
+
+    // تحريك قسم أو بنر خطوة للأعلى أو الأسفل (بديل السحب، ويعمل على الجوال)
+    function bindSectionsMoveButtons(list) {
+      list.querySelectorAll('.sec-move').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const card = btn.closest('.section-editor-card');
+          const dir = Number(btn.dataset.dir);
+          const sibling = dir < 0 ? card.previousElementSibling : card.nextElementSibling;
+          if (!sibling) return;
+          if (dir < 0) sibling.before(card); else sibling.after(card);
+          const order = Array.from(list.querySelectorAll('.section-editor-card')).map(c => c.dataset.key);
+          try {
+            await api(`/api/settings/sections/${currentSectionsPage}/reorder`, { method: 'PUT', body: JSON.stringify({ order }) });
+            showToast('تم حفظ الترتيب.');
+          } catch (err) {
+            showToast(err.message);
+            if (dir < 0) sibling.after(card); else sibling.before(card);
+          }
+        });
+      });
     }
 
     function setupSectionsPageSwitcher() {
