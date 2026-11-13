@@ -10,7 +10,7 @@ if (PHP_VERSION_ID < 80100) {
     exit('يتطلب الموقع PHP 8.1 أو أحدث. غيّر إصدار PHP من لوحة الاستضافة.');
 }
 
-foreach (['lib', 'mail', 'pages', 'public_api', 'briefs', 'reviews', 'chat', 'auth', 'admin', 'admin2', 'customers', 'ai', 'devcenter'] as $m) require __DIR__ . "/app/$m.php";
+foreach (['lib', 'mail', 'pages', 'public_api', 'briefs', 'reviews', 'chat', 'auth', 'admin', 'admin2', 'customers', 'ai', 'devcenter', 'updates'] as $m) require __DIR__ . "/app/$m.php";
 
 ini_set('display_errors', '0');
 date_default_timezone_set('UTC');
@@ -43,6 +43,7 @@ $verb = $method === 'HEAD' ? 'GET' : $method;
 register_shutdown_function(function () {
     if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
     notify_tick();
+    try { updates_tick(); } catch (Throwable $e) {}
 });
 
 maintenance_gate($path);

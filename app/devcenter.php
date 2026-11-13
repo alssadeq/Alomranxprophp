@@ -16,7 +16,6 @@ const BACKUP_TYPES = [
     'site' => ['label' => 'حزمة الموقع للنقل لاستضافة أخرى', 'dirs' => ['.']],
 ];
 const UPDATE_PERMISSIONS = ['view_updates', 'upload_update', 'install_update', 'rollback_update', 'delete_update', 'manage_backups'];
-const PHP_UPDATES_NOTE = 'التحديث الآلي غير متاح في نسخة PHP. لتحديث الموقع ارفع ملف النسخة الجديدة واستخرجه في public_html من مدير الملفات (لا يحتوي مجلد data).';
 
 /* ---------- الجلسة ---------- */
 
@@ -457,21 +456,6 @@ function api_dev_exports(string $dataset): void {
     header('Content-Disposition: attachment; filename="' . $file . '"');
     echo $body;
     exit;
-}
-
-/* ---------- التحديثات (غير متاحة في نسخة PHP) ---------- */
-
-function api_dev_updates(string $sub, string $method): void {
-    $d = require_developer();
-    if ($sub === 'updates/dashboard') {
-        send_json(['ok' => true, 'dashboard' => ['currentVersion' => app_version(), 'lastUpdate' => null, 'pending' => 0, 'installed' => 0, 'failed' => 0, 'rolledBack' => 0, 'scheduled' => 0, 'note' => PHP_UPDATES_NOTE],
-            'settings' => ['retentionCount' => 5, 'autoRollbackOnHealthFailure' => false, 'maintenanceDuringUpdate' => true, 'requireSignedUpdates' => false, 'signingKeyConfigured' => false],
-            'permissions' => array_values(array_filter(UPDATE_PERMISSIONS, fn($p) => dev_has_permission($d, $p)))]);
-    }
-    if ($sub === 'updates/history') send_json(['updates' => [], 'dashboard' => ['currentVersion' => app_version(), 'note' => PHP_UPDATES_NOTE]]);
-    if ($sub === 'updates/report' && $method === 'GET') send_json(['report' => read_json('update_report.json', null)]);
-    if ($sub === 'version-check' && $method === 'GET') send_json(['ok' => true, 'status' => ['currentVersion' => app_version(), 'checkUrl' => '', 'autoCheckEnabled' => false, 'intervalHours' => 24, 'lastCheckedAt' => null, 'lastResult' => null, 'note' => PHP_UPDATES_NOTE]]);
-    send_json(['error' => PHP_UPDATES_NOTE], 400);
 }
 
 /* ---------- الموجّه ---------- */

@@ -201,11 +201,11 @@
     </div>
 
     <div class="card">
-      <div class="card-head-row"><div><h2>إنشاء تحديث جديد</h2><p class="form-note">الـ ZIP يجب أن يحتوي على <code>manifest.json</code> ومجلد <code>files/</code>. الـ Manifest هو المصدر النهائي للنسخة والملفات.</p></div><span class="muted">ZIP / حتى 25MB</span></div>
+      <div class="card-head-row"><div><h2>إنشاء تحديث جديد</h2><p class="form-note">ارفع ملف الموقع ZIP كما يصلك (مثل <code>Alomranxprophp-2.2.0.zip</code>). رقم الإصدار يُقرأ من الملف تلقائياً، ولا يُلمس مجلد <code>data</code> ولا ملف الإعدادات.</p></div><span class="muted">ZIP / حتى 16MB</span></div>
       <form id="smartUpdateUploadForm" class="dash-form">
         <div class="form-grid">
-          <div class="form-field"><label for="smartUpdateVersion">رقم الإصدار *</label><input id="smartUpdateVersion" name="version" required pattern="\d+\.\d+\.\d+" placeholder="1.5.0"><p class="form-note">مُقترح تلقائياً بناءً على الإصدار الحالي ونوع التحديث — يمكنك تعديله يدوياً إذا لزم.</p></div>
-          <div class="form-field"><label for="smartUpdateName">اسم التحديث *</label><input id="smartUpdateName" name="name" required maxlength="160" placeholder="تطوير نظام المحادثات"></div>
+          <div class="form-field"><label for="smartUpdateVersion">رقم الإصدار</label><input id="smartUpdateVersion" name="version" pattern="\d+\.\d+\.\d+" placeholder="يُقرأ من الملف تلقائياً"><p class="form-note">اختياري: يُستخدم رقم الإصدار الموجود داخل ملف التحديث.</p></div>
+          <div class="form-field"><label for="smartUpdateName">اسم التحديث</label><input id="smartUpdateName" name="name" maxlength="160" placeholder="تطوير نظام المحادثات"></div>
           <div class="form-field"><label for="smartUpdateReleaseType">نوع التحديث *</label><select id="smartUpdateReleaseType" name="releaseType"><option>Major</option><option>Minor</option><option selected>Patch</option><option>Security</option><option>Bug Fix</option><option>Feature</option><option>Design</option><option>Content</option></select></div>
           <div class="form-field"><label for="smartUpdatePackage">ملف التحديث ZIP *</label><input type="file" id="smartUpdatePackage" name="package" accept=".zip,application/zip" required></div>
           <div class="form-field"><label for="smartUpdateDescription">وصف التحديث</label><textarea id="smartUpdateDescription" name="description" maxlength="3000" rows="3" placeholder="ملخص واضح لما يقدمه الإصدار"></textarea></div>
@@ -219,7 +219,7 @@
           <label class="dev-switch-label"><input type="checkbox" id="smartUpdateMigration" name="requiresMigration"> يتطلب Migration</label>
           <label class="dev-switch-label"><input type="checkbox" id="smartUpdateMandatory" name="mandatory"> تحديث أمني/إجباري</label>
         </div>
-        <div class="update-bundle-rule"><strong>الحماية:</strong> يتم رفض Path Traversal، الرموز الرمزية، الملفات غير المعلنة، الملفات الحساسة، والملفات التي تتجاوز الحدود. ويمكن تفعيل <strong>Signed Updates</strong> عبر <code>UPDATE_SIGNING_PUBLIC_KEY</code> و<code>REQUIRE_SIGNED_UPDATES=true</code>.</div>
+        <div class="update-bundle-rule"><strong>الحماية:</strong> تُرفض المسارات غير الآمنة والرموز الرمزية، ولا يُثبَّت أي ملف داخل <code>data</code> أو <code>backups</code>. قبل التثبيت تُحفظ نسخة (Snapshot) من الملفات المستبدلة للرجوع إليها بزر Rollback.</div>
         <button type="submit" class="btn btn-dark" id="uploadSmartUpdateBtn">رفع وفحص التحديث</button>
         <p id="smartUpdateUploadMessage" class="form-note"></p>
       </form>
