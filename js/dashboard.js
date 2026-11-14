@@ -241,6 +241,7 @@
       setupNotifications();
       setupBell();
       setupTabs();
+      setupSectionsPageSwitcher();
       setupThemeToggle();
       setupLogout();
       setupConfirmModal();
@@ -2450,31 +2451,49 @@
     }
 
     /* كل صفحة لها تبويبها: قسم «الهوية والمظهر» وقسم «الأقسام والبنرات» */
+    function showPageSub(panel, sub) {
+      panel.querySelectorAll('.page-subtab').forEach(b => {
+        const on = b.dataset.sub === sub;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panel.querySelectorAll('.page-sub').forEach(d => d.classList.toggle('is-active', d.dataset.sub === sub));
+      try { localStorage.setItem('dash-page-sub', sub); } catch (e) {}
+      if (sub === 'sections') openPageSections(panel);
+    }
+
+    function openPageSections(panel) {
+      const page = panel.dataset.page;
+      const editor = document.getElementById('sectionsEditor');
+      const host = panel.querySelector('.page-sections-host');
+      if (!editor || !host) return;
+      const moved = editor.parentElement !== host;
+      if (moved) host.appendChild(editor);
+      if (moved || page !== currentSectionsPage || !editor.childElementCount) loadSectionsEditor(page);
+    }
+
     function setupSectionsPageSwitcher() {
-      const showSub = (panel, sub) => {
-        panel.querySelectorAll('.page-subtab').forEach(b => b.classList.toggle('is-active', b.dataset.sub === sub));
-        panel.querySelectorAll('.page-sub').forEach(d => d.classList.toggle('is-active', d.dataset.sub === sub));
-        try { localStorage.setItem('dash-page-sub', sub); } catch (e) {}
-      };
-      const openPage = (panel) => {
-        const page = panel.dataset.page;
-        const editor = document.getElementById('sectionsEditor');
-        const host = panel.querySelector('.page-sections-host');
-        if (editor && host && editor.parentElement !== host) host.appendChild(editor);
-        if (page !== currentSectionsPage || !editor.childElementCount) loadSectionsEditor(page);
-      };
+      if (setupSectionsPageSwitcher.done) return;
+      setupSectionsPageSwitcher.done = true;
       let savedSub = 'identity';
-      try { savedSub = localStorage.getItem('dash-page-sub') || 'identity'; } catch (e) {}
+      try { savedSub = localStorage.getItem('dash-page-sub') === 'sections' ? 'sections' : 'identity'; } catch (e) {}
       document.querySelectorAll('.page-panel').forEach(panel => {
-        showSub(panel, savedSub === 'sections' ? 'sections' : 'identity');
-        panel.querySelectorAll('.page-subtab').forEach(btn => {
-          btn.addEventListener('click', () => showSub(panel, btn.dataset.sub));
-        });
-        panel.querySelectorAll('.page-goto-sections').forEach(btn => {
-          btn.addEventListener('click', () => showSub(panel, 'sections'));
-        });
-        const tab = document.querySelector(`.dash-tab[data-tab="page-${panel.dataset.page}"]`);
-        if (tab) tab.addEventListener('click', () => openPage(panel));
+        panel.querySelectorAll('.page-subtab').forEach(b => b.classList.toggle('is-active', b.dataset.sub === savedSub));
+        panel.querySelectorAll('.page-sub').forEach(d => d.classList.toggle('is-active', d.dataset.sub === savedSub));
+      });
+      // تفويض الأحداث: الأزرار تعمل دائماً حتى لو تأخر تحميل باقي اللوحة
+      document.addEventListener('click', (e) => {
+        const sub = e.target.closest('.page-subtab, .page-goto-sections');
+        if (sub) {
+          const panel = sub.closest('.page-panel');
+          if (panel) showPageSub(panel, sub.classList.contains('page-goto-sections') ? 'sections' : sub.dataset.sub);
+          return;
+        }
+        const tab = e.target.closest('.dash-tab[data-tab^="page-"]');
+        if (tab) {
+          const panel = document.getElementById('tab-' + tab.dataset.tab);
+          if (panel && panel.querySelector('.page-sub.is-active[data-sub="sections"]')) openPageSections(panel);
+        }
       });
     }
 

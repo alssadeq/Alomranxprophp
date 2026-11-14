@@ -423,9 +423,19 @@
 
   <!-- ============ تبويب الصفحة الرئيسية ============ -->
   <section id="tab-page-home" class="dash-panel page-panel" data-page="home">
-    <div class="page-subtabs" role="tablist">
-      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
-      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    <div class="page-head">
+      <div class="page-head-top">
+        <div class="page-head-info">
+          <span class="page-head-kicker">صفحة في الموقع</span>
+          <h2>الصفحة الرئيسية</h2>
+          <p>البانر الرئيسي، البانرات المتحركة، الإحصاءات والخدمات، وكل أقسام الصفحة الرئيسية.</p>
+        </div>
+        <a class="page-head-view" href="/" target="_blank" rel="noopener">عرض الصفحة ↗</a>
+      </div>
+      <div class="page-subtabs" role="tablist" aria-label="أقسام تبويب الصفحة الرئيسية">
+        <button type="button" class="page-subtab is-active" data-sub="identity" role="tab" aria-selected="true"><span class="ps-icon" aria-hidden="true">🎨</span><span class="ps-text"><strong>الهوية والمظهر</strong><small>الصور والشعارات والمحتوى</small></span></button>
+        <button type="button" class="page-subtab" data-sub="sections" role="tab" aria-selected="false"><span class="ps-icon" aria-hidden="true">🧩</span><span class="ps-text"><strong>الأقسام والبنرات</strong><small>الترتيب والإظهار والبنرات</small></span></button>
+      </div>
     </div>
     <div class="page-sub is-active" data-sub="identity">
     <div class="card">
@@ -494,19 +504,25 @@
     </div>
     </div>
     <div class="page-sub" data-sub="sections">
-    <div class="card">
-      <h2>أقسام الصفحة الرئيسية</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-    </div>
       <div class="page-sections-host"><div id="sectionsEditor"></div></div>
     </div>
   </section>
 
   <!-- ============ تبويب صفحة "من نحن" ============ -->
   <section id="tab-page-about" class="dash-panel page-panel" data-page="about">
-    <div class="page-subtabs" role="tablist">
-      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
-      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    <div class="page-head">
+      <div class="page-head-top">
+        <div class="page-head-info">
+          <span class="page-head-kicker">صفحة في الموقع</span>
+          <h2>من نحن</h2>
+          <p>خلفية رأس الصفحة، الشهادات، التكريم، الشركاء، فريق العمل، وأقسام الصفحة.</p>
+        </div>
+        <a class="page-head-view" href="/about" target="_blank" rel="noopener">عرض الصفحة ↗</a>
+      </div>
+      <div class="page-subtabs" role="tablist" aria-label="أقسام تبويب من نحن">
+        <button type="button" class="page-subtab is-active" data-sub="identity" role="tab" aria-selected="true"><span class="ps-icon" aria-hidden="true">🎨</span><span class="ps-text"><strong>الهوية والمظهر</strong><small>الصور والشعارات والمحتوى</small></span></button>
+        <button type="button" class="page-subtab" data-sub="sections" role="tab" aria-selected="false"><span class="ps-icon" aria-hidden="true">🧩</span><span class="ps-text"><strong>الأقسام والبنرات</strong><small>الترتيب والإظهار والبنرات</small></span></button>
+      </div>
     </div>
     <div class="page-sub is-active" data-sub="identity">
     <div class="card">
@@ -567,19 +583,25 @@
     </div>
     </div>
     <div class="page-sub" data-sub="sections">
-    <div class="card">
-      <h2>أقسام صفحة "من نحن"</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-    </div>
       <div class="page-sections-host"></div>
     </div>
   </section>
 
   <!-- ============ تبويب صفحة "مشاريعنا" ============ -->
   <section id="tab-page-projects" class="dash-panel page-panel" data-page="projects">
-    <div class="page-subtabs" role="tablist">
-      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
-      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    <div class="page-head">
+      <div class="page-head-top">
+        <div class="page-head-info">
+          <span class="page-head-kicker">صفحة في الموقع</span>
+          <h2>مشاريعنا</h2>
+          <p>خلفية رأس الصفحة، شعار بطاقات المشاريع، وأقسام الصفحة.</p>
+        </div>
+        <a class="page-head-view" href="/projects" target="_blank" rel="noopener">عرض الصفحة ↗</a>
+      </div>
+      <div class="page-subtabs" role="tablist" aria-label="أقسام تبويب مشاريعنا">
+        <button type="button" class="page-subtab is-active" data-sub="identity" role="tab" aria-selected="true"><span class="ps-icon" aria-hidden="true">🎨</span><span class="ps-text"><strong>الهوية والمظهر</strong><small>الصور والشعارات والمحتوى</small></span></button>
+        <button type="button" class="page-subtab" data-sub="sections" role="tab" aria-selected="false"><span class="ps-icon" aria-hidden="true">🧩</span><span class="ps-text"><strong>الأقسام والبنرات</strong><small>الترتيب والإظهار والبنرات</small></span></button>
+      </div>
     </div>
     <div class="page-sub is-active" data-sub="identity">
     <div class="card">
@@ -615,19 +637,25 @@
     </div>
     </div>
     <div class="page-sub" data-sub="sections">
-    <div class="card">
-      <h2>أقسام صفحة "مشاريعنا"</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-    </div>
       <div class="page-sections-host"></div>
     </div>
   </section>
 
   <!-- ============ تبويب صفحة "منهجيتنا" ============ -->
   <section id="tab-page-methodology" class="dash-panel page-panel" data-page="methodology">
-    <div class="page-subtabs" role="tablist">
-      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
-      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    <div class="page-head">
+      <div class="page-head-top">
+        <div class="page-head-info">
+          <span class="page-head-kicker">صفحة في الموقع</span>
+          <h2>منهجيتنا</h2>
+          <p>رأس الصفحة، مراحل العمل، الجودة، الأسئلة الشائعة، ودعوة التواصل.</p>
+        </div>
+        <a class="page-head-view" href="/methodology" target="_blank" rel="noopener">عرض الصفحة ↗</a>
+      </div>
+      <div class="page-subtabs" role="tablist" aria-label="أقسام تبويب منهجيتنا">
+        <button type="button" class="page-subtab is-active" data-sub="identity" role="tab" aria-selected="true"><span class="ps-icon" aria-hidden="true">🎨</span><span class="ps-text"><strong>الهوية والمظهر</strong><small>الصور والشعارات والمحتوى</small></span></button>
+        <button type="button" class="page-subtab" data-sub="sections" role="tab" aria-selected="false"><span class="ps-icon" aria-hidden="true">🧩</span><span class="ps-text"><strong>الأقسام والبنرات</strong><small>الترتيب والإظهار والبنرات</small></span></button>
+      </div>
     </div>
     <div class="page-sub is-active" data-sub="identity">
     <div class="card">
@@ -637,19 +665,25 @@
     </div>
     </div>
     <div class="page-sub" data-sub="sections">
-    <div class="card">
-      <h2>أقسام صفحة "منهجيتنا"</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-    </div>
       <div class="page-sections-host"></div>
     </div>
   </section>
 
   <!-- ============ تبويب صفحة "الخصوصية" ============ -->
   <section id="tab-page-privacy" class="dash-panel page-panel" data-page="privacy">
-    <div class="page-subtabs" role="tablist">
-      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
-      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    <div class="page-head">
+      <div class="page-head-top">
+        <div class="page-head-info">
+          <span class="page-head-kicker">صفحة في الموقع</span>
+          <h2>الخصوصية</h2>
+          <p>رأس الصفحة ونص سياسة الخصوصية.</p>
+        </div>
+        <a class="page-head-view" href="/privacy" target="_blank" rel="noopener">عرض الصفحة ↗</a>
+      </div>
+      <div class="page-subtabs" role="tablist" aria-label="أقسام تبويب الخصوصية">
+        <button type="button" class="page-subtab is-active" data-sub="identity" role="tab" aria-selected="true"><span class="ps-icon" aria-hidden="true">🎨</span><span class="ps-text"><strong>الهوية والمظهر</strong><small>الصور والشعارات والمحتوى</small></span></button>
+        <button type="button" class="page-subtab" data-sub="sections" role="tab" aria-selected="false"><span class="ps-icon" aria-hidden="true">🧩</span><span class="ps-text"><strong>الأقسام والبنرات</strong><small>الترتيب والإظهار والبنرات</small></span></button>
+      </div>
     </div>
     <div class="page-sub is-active" data-sub="identity">
     <div class="card">
@@ -659,10 +693,6 @@
     </div>
     </div>
     <div class="page-sub" data-sub="sections">
-    <div class="card">
-      <h2>أقسام صفحة "الخصوصية"</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-    </div>
       <div class="page-sections-host"></div>
     </div>
   </section>

@@ -412,10 +412,30 @@ function send_json($data, int $status = 200): void {
     exit;
 }
 
+/* إضافة رقم الإصدار لروابط CSS/JS المحلية حتى لا يستخدم المتصفح نسخة قديمة بعد أي تحديث */
+function asset_version(): string {
+    static $v = null;
+    if ($v === null) {
+        $raw = @file_get_contents(ROOT_DIR . '/VERSION');
+        $v = preg_replace('/[^0-9A-Za-z.\-]/', '', trim((string)$raw)) ?: '1';
+    }
+    return $v;
+}
+
+function version_assets(string $html): string {
+    $v = asset_version();
+    return (string)preg_replace_callback(
+        '#\b(src|href)=(["\'])(?!https?:|//|data:|\#|mailto:|tel:)([^"\'?\#]+\.(?:css|js))\2#i',
+        fn($m) => $m[1] . '=' . $m[2] . $m[3] . '?v=' . rawurlencode($v) . $m[2],
+        $html
+    );
+}
+
 function send_html(string $html, int $status = 200): void {
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
-    echo $html;
+    header('Cache-Control: no-cache, must-revalidate');
+    echo version_assets($html);
     exit;
 }
 
