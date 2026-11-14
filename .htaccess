@@ -41,12 +41,12 @@ AddOutputFilterByType DEFLATE text/html text/css application/javascript applicat
 
 # حجم الرفع لنموذج طلب المشروع (المرفقات حتى 60MB)
 <IfModule mod_php.c>
-php_value upload_max_filesize 16M
-php_value post_max_size 64M
+php_value upload_max_filesize 128M
+php_value post_max_size 130M
 php_value max_file_uploads 12
 </IfModule>
 <IfModule lsapi_module>
-php_value upload_max_filesize 16M
-php_value post_max_size 64M
+php_value upload_max_filesize 128M
+php_value post_max_size 130M
 php_value max_file_uploads 12
 </IfModule>

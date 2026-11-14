@@ -120,9 +120,9 @@
       <p class="form-note">تُنشأ كل نسخة بصيغة ZIP ويُتحقق من سلامتها بعد إنشائها مباشرة بفك ضغط كل ملف فيها. لا تتضمن أي نسخة أسرار التشغيل أو الجلسات.</p>
       <div class="backup-type-grid" id="backupTypeGrid">
         <label class="backup-type"><input type="radio" name="backupType" value="data" checked><strong>البيانات فقط</strong><span>مجلد data/: المستخدمون، الأعمال، الإعدادات، الرسائل، المحادثات والسجلات.</span></label>
-        <label class="backup-type"><input type="radio" name="backupType" value="media"><strong>الصور والملفات المرفوعة</strong><span>مجلد public/images/: صور الأعمال والهوية والبانرات ومرفقات المحادثات.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="media"><strong>الصور والملفات المرفوعة</strong><span>الصور المرفوعة (data/uploads) وصور الموقع: صور الأعمال والهوية والبنرات ومرفقات المحادثات.</span></label>
         <label class="backup-type"><input type="radio" name="backupType" value="full"><strong>نسخة كاملة</strong><span>البيانات + الصور والملفات المرفوعة معاً.</span></label>
-        <label class="backup-type"><input type="radio" name="backupType" value="site"><strong>تصدير الموقع لاستضافة أخرى</strong><span>الكود كاملاً + البيانات + الملفات + دليل نقل خطوة بخطوة. بدون node_modules وملف .env.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="site"><strong>تصدير الموقع لاستضافة أخرى</strong><span>الكود كاملاً + البيانات + الملفات + دليل نقل.</span></label>
       </div>
       <button id="createBackupBtn" class="btn btn-dark">إنشاء النسخة الآن</button>
       <p id="createBackupMessage" class="form-note"></p>
@@ -134,6 +134,16 @@
         <button id="refreshBackupsBtn" class="btn btn-outline btn-sm">تحديث</button>
       </div>
       <div class="overview-list" id="backupsList"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card">
+      <h2>استعادة من ملف على جهازك</h2>
+      <p class="form-note">ارفع نسخة احتياطية ZIP نزّلتها سابقاً من هنا، أو ملف <code>data.zip</code> من النسخة القديمة للموقع. تُستعاد البيانات والصور فقط ولا يتغير كود الموقع، وتُنشأ قبلها نسخة احتياطية تلقائية من البيانات الحالية.</p>
+      <form id="restoreUploadForm" class="dash-form">
+        <div class="form-field"><label for="restoreUploadFile">ملف النسخة الاحتياطية (ZIP)</label><input type="file" id="restoreUploadFile" accept=".zip,application/zip" required></div>
+        <button type="submit" class="btn btn-dark" id="restoreUploadBtn">رفع واستعادة</button>
+        <p id="restoreUploadMessage" class="form-note"></p>
+      </form>
     </div>
 
     <div class="card">
@@ -201,7 +211,7 @@
     </div>
 
     <div class="card">
-      <div class="card-head-row"><div><h2>إنشاء تحديث جديد</h2><p class="form-note">ارفع ملف الموقع ZIP كما يصلك (مثل <code>Alomranxprophp-2.2.0.zip</code>). رقم الإصدار يُقرأ من الملف تلقائياً، ولا يُلمس مجلد <code>data</code> ولا ملف الإعدادات.</p></div><span class="muted">ZIP / حتى 16MB</span></div>
+      <div class="card-head-row"><div><h2>إنشاء تحديث جديد</h2><p class="form-note">ارفع ملف الموقع ZIP كما يصلك (مثل <code>Alomranxprophp-2.2.0.zip</code>). رقم الإصدار يُقرأ من الملف تلقائياً، ولا يُلمس مجلد <code>data</code> ولا ملف الإعدادات.</p></div><span class="muted">ZIP / حتى 40MB</span></div>
       <form id="smartUpdateUploadForm" class="dash-form">
         <div class="form-grid">
           <div class="form-field"><label for="smartUpdateVersion">رقم الإصدار</label><input id="smartUpdateVersion" name="version" pattern="\d+\.\d+\.\d+" placeholder="يُقرأ من الملف تلقائياً"><p class="form-note">اختياري: يُستخدم رقم الإصدار الموجود داخل ملف التحديث.</p></div>

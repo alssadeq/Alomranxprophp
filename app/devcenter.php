@@ -384,6 +384,8 @@ function api_dev_backups(string $method, string $name = ''): void {
         usort($list, fn($a, $b) => strcmp($b['createdAt'], $a['createdAt']));
         send_json(['backups' => $list, 'types' => array_map(fn($k) => ['id' => $k, 'label' => BACKUP_TYPES[$k]['label']], array_keys(BACKUP_TYPES))]);
     }
+    if ($name === 'upload-restore' && $method === 'POST') api_dev_backup_restore(null);
+    if (preg_match('#^(.+)/restore$#', $name, $rm) && $method === 'POST') api_dev_backup_restore($rm[1]);
     if ($name === '' && $method === 'POST') {
         $type = str_val(json_body()['type'] ?? '') ?: 'data';
         if (!isset(BACKUP_TYPES[$type])) send_json(['error' => 'نوع النسخة غير معروف.'], 400);
@@ -412,6 +414,106 @@ function api_dev_backups(string $method, string $name = ''): void {
         send_json(['ok' => true]);
     }
     send_json(['error' => 'غير موجود.'], 404);
+}
+
+/* ---------- استعادة نسخة احتياطية ---------- */
+// تُستعاد البيانات (data) والصور فقط، ولا يُلمس كود الموقع. يقبل نسخ مركز المطوّر،
+// وملف data.zip من نسخة Node (الملفات في الجذر أو داخل مجلد data). قبل الاستعادة
+// تُنشأ نسخة احتياطية تلقائية من البيانات الحالية للرجوع إليها.
+
+const RESTORE_MAX_TOTAL = 400 * 1024 * 1024;
+const RESTORE_SKIP = ['php-sessions', 'sessions', 'dev_sessions.json', 'ratelimit.json', 'bootstrap-token.txt', '.htaccess', '.notify-tick', 'throttle.json', 'staff_presence.json'];
+
+function backup_restore_zip(string $file, string $by): array {
+    if (!class_exists('ZipArchive')) throw new RuntimeException('مكتبة ZIP غير متاحة في PHP على الاستضافة.');
+    $zip = new ZipArchive();
+    if ($zip->open($file) !== true) throw new RuntimeException('الملف ليس نسخة احتياطية ZIP صالحة.');
+    $names = [];
+    $total = 0;
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $st = $zip->statIndex($i);
+        $n = str_replace('\\', '/', (string)$st['name']);
+        if ($n === '' || str_ends_with($n, '/') || str_starts_with($n, '__MACOSX/')) continue;
+        if (str_starts_with($n, '/') || preg_match('#(^|/)\.\.(/|$)#', $n) || preg_match('/^[A-Za-z]:/', $n)) throw new RuntimeException('النسخة تحتوي على مسار ملف غير آمن.');
+        if ($zip->getExternalAttributesIndex($i, $op, $attr) && $op === ZipArchive::OPSYS_UNIX && (($attr >> 16) & 0170000) === 0120000) throw new RuntimeException('الرموز الرمزية غير مسموحة داخل النسخة.');
+        $total += (int)$st['size'];
+        $names[$n] = $i;
+    }
+    if ($total > RESTORE_MAX_TOTAL) { $zip->close(); throw new RuntimeException('حجم النسخة بعد فك الضغط كبير جداً.'); }
+    // مكان مجلد البيانات داخل الملف: data/ ، أو مجلد/data/ ، أو الجذر (data.zip)، أو مجلد واحد
+    $dataPrefix = null;
+    $imgPrefix = null;
+    foreach (array_keys($names) as $n) {
+        if (preg_match('#^((?:[^/]+/)?)data/(users|settings|works)\.json$#', $n, $m)) { $dataPrefix = $m[1] . 'data/'; $imgPrefix = $m[1] . 'images/'; break; }
+    }
+    if ($dataPrefix === null) {
+        foreach (array_keys($names) as $n) {
+            if (preg_match('#^((?:[^/]+/)?)(users|settings|works)\.json$#', $n, $m)) { $dataPrefix = $m[1]; break; }
+        }
+    }
+    if ($dataPrefix === null) {
+        // نسخة الصور فقط (data/uploads و images)
+        foreach (array_keys($names) as $n) if (preg_match('#^((?:[^/]+/)?)data/uploads/#', $n, $m)) { $dataPrefix = $m[1] . 'data/'; $imgPrefix = $m[1] . 'images/'; break; }
+    }
+    if ($dataPrefix === null) { $zip->close(); throw new RuntimeException('لم أجد بيانات الموقع داخل الملف (users.json أو settings.json أو works.json أو مجلد الصور).'); }
+
+    // نسخة احتياطية تلقائية من البيانات الحالية قبل الاستبدال
+    $safety = backup_create($by . ' (قبل الاستعادة)', 'full');
+
+    $restored = 0;
+    $images = 0;
+    foreach ($names as $n => $i) {
+        if ($dataPrefix === '') {
+            // data.zip: محتويات مجلد data في جذر الملف (يُتجاهل أي كود إن وُجد)
+            if (preg_match('#^(images|app|css|js|fonts|updates|backups)/#', $n) || preg_match('#\.(php|html|css|htaccess)$#i', $n)) continue;
+            $rel = $n;
+        } elseif (str_starts_with($n, $dataPrefix)) $rel = substr($n, strlen($dataPrefix));
+        elseif ($imgPrefix !== null && str_starts_with($n, $imgPrefix)) {
+            $rel = substr($n, strlen($imgPrefix));
+            if ($rel === '' || !preg_match('/\.(jpe?g|png|webp|gif|svg|ico|avif)$/i', $rel)) continue;
+            $target = ROOT_DIR . '/images/' . $rel;
+            if (!is_dir(dirname($target))) @mkdir(dirname($target), 0755, true);
+            if (@file_put_contents($target, $zip->getFromIndex($i)) !== false) $images++;
+            continue;
+        } else continue;
+        $first = explode('/', $rel)[0];
+        if ($rel === '' || in_array($first, RESTORE_SKIP, true) || str_starts_with(basename($rel), '.lock-') || str_contains($rel, '.tmp')) continue;
+        $target = DATA_DIR . '/' . $rel;
+        if (!is_dir(dirname($target))) @mkdir(dirname($target), 0700, true);
+        $tmp = $target . '.rs-' . rand_hex(3);
+        if (@file_put_contents($tmp, $zip->getFromIndex($i)) === false || !@rename($tmp, $target)) { @unlink($tmp); continue; }
+        $restored++;
+    }
+    $zip->close();
+    if (!$restored && !$images) throw new RuntimeException('لم تُستعد أي ملفات من النسخة.');
+    ensure_data_dir();
+    @unlink(DATA_DIR . '/.customers-synced'); // مزامنة قاعدة العملاء مع البيانات المستعادة
+    return ['files' => $restored, 'images' => $images, 'safetyBackup' => $safety['name']];
+}
+
+function api_dev_backup_restore(?string $name): void {
+    $d = require_dev_permission('manage_backups');
+    rate_limit('backup_restore', 10, 3600, 'تم تجاوز عدد عمليات الاستعادة. حاول لاحقاً.', $d['id']);
+    @set_time_limit(600);
+    if ($name !== null) {
+        $p = backup_path($name);
+        if (!$p) send_json(['error' => 'النسخة الاحتياطية غير موجودة.'], 404);
+        $src = $p;
+        $label = $name;
+    } else {
+        if (empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) send_json(['error' => 'حجم الملف أكبر من المسموح في إعدادات الاستضافة (upload_max_filesize).'], 400);
+        $f = uploaded_files('backup')[0] ?? null;
+        if (!$f) send_json(['error' => 'اختر ملف النسخة الاحتياطية ZIP.'], 400);
+        if (in_array($f['error'], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) send_json(['error' => 'حجم الملف أكبر من المسموح في إعدادات الاستضافة.'], 400);
+        if ($f['error'] !== UPLOAD_ERR_OK || !is_upload($f['tmp'])) send_json(['error' => 'تعذر رفع الملف.'], 400);
+        if (!preg_match('/\.zip$/i', (string)$f['name'])) send_json(['error' => 'يجب رفع ملف ZIP.'], 400);
+        $src = $f['tmp'];
+        $label = mb_slice((string)$f['name'], 120) . ' (مرفوع)';
+    }
+    try { $r = backup_restore_zip($src, $d['username']); }
+    catch (RuntimeException $e) { send_json(['error' => $e->getMessage()], 400); }
+    log_dev_action($d, 'backup_restore', $label . ' — ' . $r['files'] . ' ملف، ' . $r['images'] . ' صورة');
+    send_json(['ok' => true] + $r);
 }
 
 /* ---------- التصدير ---------- */

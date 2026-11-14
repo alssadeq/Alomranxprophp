@@ -286,6 +286,7 @@
     /* ---------- النسخ الاحتياطي ---------- */
     async function loadBackups() {
       const box = document.getElementById('backupsList');
+      setupRestoreUpload();
       try {
         const { backups } = await api('/api/developer/backups');
         if (!backups.length) { box.innerHTML = '<p class="muted">لا توجد نسخ احتياطية بعد.</p>'; return; }
@@ -295,9 +296,22 @@
               <span class="muted">${fmtDate(b.createdAt)} — ${fmtBytes(b.size)} — ${escapeHtml(b.name)}</span></span>
             <span>
               <a class="btn btn-outline btn-sm" href="/api/developer/backups/${encodeURIComponent(b.name)}/download">تنزيل</a>
+              <button class="btn btn-dark btn-sm" data-restore-backup="${escapeHtml(b.name)}">استعادة</button>
               <button class="btn btn-danger btn-sm" data-delete-backup="${escapeHtml(b.name)}">حذف</button>
             </span>
           </div>`).join('');
+        box.querySelectorAll('[data-restore-backup]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const name = btn.getAttribute('data-restore-backup');
+            if (!confirm('استعادة هذه النسخة؟\n\nستُستبدل بيانات الموقع الحالية (الحسابات، الأعمال، الإعدادات، الرسائل...) والصور بما في النسخة. كود الموقع لا يتغير.\n\nقبل الاستعادة تُنشأ نسخة احتياطية تلقائية من البيانات الحالية للرجوع إليها.')) return;
+            btn.disabled = true; btn.textContent = 'جارِ الاستعادة...';
+            try {
+              const r = await api('/api/developer/backups/' + encodeURIComponent(name) + '/restore', { method: 'POST' });
+              alert(`تمت الاستعادة بنجاح ✅\nملفات البيانات: ${r.files} — الصور: ${r.images}\nنسخة الأمان قبل الاستعادة: ${r.safetyBackup}\n\nقد يُطلب منك تسجيل الدخول من جديد.`);
+              loadBackups();
+            } catch (e) { showToast(e.message); btn.disabled = false; btn.textContent = 'استعادة'; }
+          });
+        });
         box.querySelectorAll('[data-delete-backup]').forEach(btn => {
           btn.addEventListener('click', async () => {
             const name = btn.getAttribute('data-delete-backup');
@@ -310,6 +324,29 @@
           });
         });
       } catch (e) { box.innerHTML = `<p class="muted">تعذر التحميل: ${escapeHtml(e.message)}</p>`; }
+    }
+
+    function setupRestoreUpload() {
+      const form = document.getElementById('restoreUploadForm');
+      if (!form || form.dataset.bound) return;
+      form.dataset.bound = '1';
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('restoreUploadFile'), msg = document.getElementById('restoreUploadMessage'), btn = document.getElementById('restoreUploadBtn');
+        if (!input.files[0]) { msg.textContent = 'اختر ملف النسخة الاحتياطية أولاً.'; return; }
+        if (!confirm('استعادة البيانات من هذا الملف؟\n\nستُستبدل بيانات الموقع الحالية والصور بما في الملف. كود الموقع لا يتغير.\nقبل الاستعادة تُنشأ نسخة احتياطية تلقائية من البيانات الحالية.')) return;
+        const fd = new FormData(); fd.append('backup', input.files[0], input.files[0].name);
+        btn.disabled = true; msg.textContent = 'جارِ رفع الملف واستعادة البيانات... لا تغلق الصفحة.';
+        try {
+          const res = await fetch('/api/developer/backups/upload-restore', { method: 'POST', credentials: 'same-origin', body: fd });
+          let data = {}; try { data = await res.json(); } catch (_) {}
+          if (!res.ok) throw new Error(data.error || 'تعذرت الاستعادة.');
+          msg.textContent = `تمت الاستعادة بنجاح ✅ ملفات البيانات: ${data.files} — الصور: ${data.images}. نسخة الأمان: ${data.safetyBackup}`;
+          input.value = '';
+          loadBackups();
+        } catch (err) { msg.textContent = err.message; }
+        finally { btn.disabled = false; }
+      });
     }
 
     async function loadExports() {
