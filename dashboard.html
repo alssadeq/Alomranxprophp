@@ -90,8 +90,14 @@
       <button class="dash-tab" data-tab="customers" role="tab">العملاء</button>
       <button class="dash-tab" data-tab="reviews" role="tab">التقييمات <span class="tab-count" id="reviewsPendingCount" hidden></span></button>
       <div class="nav-group-label">المحتوى والهوية</div>
-      <button class="dash-tab" data-tab="identity" role="tab">الهوية والمظهر</button>
-      <button class="dash-tab" data-tab="sections" role="tab">أقسام الصفحات</button>
+      <button class="dash-tab" data-tab="identity" role="tab">الهوية العامة</button>
+      <div class="nav-group-label">صفحات الموقع</div>
+      <button class="dash-tab" data-tab="page-home" role="tab">الرئيسية</button>
+      <button class="dash-tab" data-tab="page-about" role="tab">من نحن</button>
+      <button class="dash-tab" data-tab="page-projects" role="tab">مشاريعنا</button>
+      <button class="dash-tab" data-tab="page-methodology" role="tab">منهجيتنا</button>
+      <button class="dash-tab" data-tab="page-privacy" role="tab">الخصوصية</button>
+      <div class="nav-group-label">التواصل</div>
       <button class="dash-tab" data-tab="social" role="tab">وسائل التواصل</button>
       <div class="nav-group-label">الإدارة</div>
       <button class="dash-tab" data-tab="activity" role="tab">سجل النشاط</button>
@@ -215,6 +221,10 @@
 
   <!-- ============ تبويب الهوية والمظهر ============ -->
   <section id="tab-identity" class="dash-panel">
+    <div class="card page-intro-card">
+      <h2>الهوية العامة للموقع</h2>
+      <p class="form-note">إعدادات مشتركة تظهر في كل صفحات الموقع: الخطوط، الشعار، بطاقة المشاركة، زر الدخول، رسالة الترحيب، الفوتر والخريطة. أما هوية كل صفحة وأقسامها وبنراتها فتجدها في تبويب الصفحة نفسها من القائمة.</p>
+    </div>
 
     <div class="card">
       <h2>الخطوط</h2>
@@ -343,155 +353,8 @@
     </div>
 
     <div class="card">
-      <h2>شعار بطاقات المشاريع</h2>
-      <p class="form-note">شعار مستقل تماماً عن شعار رأس الموقع، يظهر كعلامة صغيرة شفافة الخلفية أعلى يسار صورة كل مشروع.</p>
-      <div class="identity-row">
-        <div class="identity-item">
-          <label>شعار بطاقة المشروع</label>
-          <div class="identity-preview" id="projectLogoPreview">لا يوجد شعار مرفوع بعد</div>
-          <input type="file" id="projectLogoFile" accept="image/png,image/webp,image/svg+xml">
-          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، مربع 400 × 400 بكسل</p>
-          <button type="button" class="btn btn-dark btn-sm" id="projectLogoUploadBtn">رفع الشعار</button>
-        </div>
-        <div class="identity-item">
-          <label class="perm-check"><input type="checkbox" id="projectLogoVisible"> إظهار الشعار في بطاقات المشاريع</label>
-        </div>
-      </div>
-      <p id="projectLogoMessage" class="form-note"></p>
-    </div>
-
-    <div class="card">
-      <h2>شعار ونص البانر الرئيسي</h2>
-      <p class="form-note">شعار مستقل عن شعار رأس الموقع وشعار بطاقات المشاريع، يظهر في منتصف البانر من جهة اليسار. النص (العربي/الإنجليزي) يُحرَّر لكل بانر على حدة بالأسفل.</p>
-      <div class="identity-row">
-        <div class="identity-item">
-          <label>شعار البانر</label>
-          <div class="identity-preview" id="bannerLogoPreview">لا يوجد شعار مرفوع بعد</div>
-          <input type="file" id="bannerLogoFile" accept="image/png,image/webp,image/svg+xml">
-          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، 600 × 600 أو أفقي 800 × 300 بكسل</p>
-          <button type="button" class="btn btn-dark btn-sm" id="bannerLogoUploadBtn">رفع شعار البانر</button>
-        </div>
-        <div class="identity-item">
-          <label class="perm-check"><input type="checkbox" id="bannerLogoVisible"> إظهار الشعار في البانر</label>
-          <label class="perm-check"><input type="checkbox" id="bannerTextVisible"> إظهار النص (العربي/الإنجليزي) في البانر</label>
-        </div>
-      </div>
-      <p id="bannerLogoMessage" class="form-note"></p>
-    </div>
-
-    <div class="card">
-      <h2>البانرات (الصفحة الرئيسية — حتى 5 بانرات)</h2>
-      <p class="form-note">تتبدل البانرات تلقائياً كل 3 ثوانٍ في الصفحة الرئيسية. يمكن إضافة رابط لكل بانر، فيُنقل الزائر إليه عند الضغط على البانر.</p>
-      <p class="size-hint">📐 المقاس المقترح: 1920 × 1080 بكسل (16:9). على الجوال تظهر الصورة كاملة، وعلى الكمبيوتر يُقص جزء من أعلاها وأسفلها، فضع النصوص والشعار في الشريط الأوسط (بين الارتفاع 220 و 860 تقريباً).</p>
-      <div id="bannersEditor" class="banners-editor">
-        <p class="muted">جارِ التحميل...</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>خلفيات رأس الصفحات</h2>
-      <div class="identity-row">
-        <div class="identity-item">
-          <label>خلفية رأس صفحة "من نحن"</label>
-          <div class="identity-preview" id="aboutBgPreview">لا توجد خلفية مرفوعة بعد</div>
-          <input type="file" id="aboutBgFile" accept="image/png,image/jpeg,image/webp">
-          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
-          <button type="button" class="btn btn-dark btn-sm" data-upload="about">رفع الخلفية</button>
-        </div>
-        <div class="identity-item">
-          <label>خلفية رأس صفحة "مشاريعنا"</label>
-          <div class="identity-preview" id="projectsBgPreview">لا توجد خلفية مرفوعة بعد</div>
-          <input type="file" id="projectsBgFile" accept="image/png,image/jpeg,image/webp">
-          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
-          <button type="button" class="btn btn-dark btn-sm" data-upload="projects">رفع الخلفية</button>
-        </div>
-      </div>
-      <p id="bgMessage" class="form-note"></p>
-    </div>
-
-    <div class="card">
       <h2>روابط التواصل الاجتماعي</h2>
       <p class="form-note">إدارة كاملة لكل منصات التواصل (إضافة/تعديل/حذف، تخصيص شكل كل أيقونة، ترتيبها، ومكان ظهورها) صارت في تبويب مستقل: <strong>"وسائل التواصل"</strong> بأعلى الصفحة.</p>
-    </div>
-
-    <div class="card">
-      <h2>إحصاءات الصفحة الرئيسية</h2>
-      <p class="form-note">الأرقام الظاهرة في الشريط الكحلي وصندوق الإحصاءات بالصفحة الرئيسية وصفحة "من نحن".</p>
-      <form id="statsForm" class="dash-form">
-        <div class="form-grid">
-          <div class="form-field">
-            <label for="stat-years">سنوات الخبرة</label>
-            <input type="text" id="stat-years" placeholder="15+">
-          </div>
-          <div class="form-field">
-            <label for="stat-projects">المشاريع المنجزة</label>
-            <input type="text" id="stat-projects" placeholder="120+">
-          </div>
-          <div class="form-field">
-            <label for="stat-cities">المناطق التي نخدمها</label>
-            <input type="text" id="stat-cities" placeholder="13">
-          </div>
-          <div class="form-field">
-            <label for="stat-satisfaction">نسبة رضا العملاء</label>
-            <input type="text" id="stat-satisfaction" placeholder="98%">
-          </div>
-        </div>
-        <button type="submit" class="btn btn-sand">حفظ الإحصاءات</button>
-        <p id="statsMessage" class="form-note"></p>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>الخدمات (الصفحة الرئيسية)</h2>
-      <p class="form-note">أضف أو عدّل أو احذف الخدمات الظاهرة بالصفحة الرئيسية.</p>
-      <div id="servicesEditor" class="banners-editor">
-        <p class="muted">جارِ التحميل...</p>
-      </div>
-      <button type="button" id="addServiceBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة خدمة جديدة</button>
-      <p id="servicesMessage" class="form-note"></p>
-    </div>
-
-    <div class="card showcase-card" data-showcase="licenses">
-      <h2>صفحة "من نحن": الشهادات والتراخيص</h2>
-      <p class="form-note">صور السجل التجاري، شهادة تصنيف المقاولين، الرخص البلدية، شهادات الجودة... مع عنوان ووصف (مثل الجهة المانحة أو رقم الترخيص) ورابط اختياري للتحقق. يظهر القسم في صفحة "من نحن" عند وجود عنصر ظاهر واحد على الأقل، ويمكن إخفاؤه وترتيبه من «أقسام الصفحات».</p>
-      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو ترخيص</button>
-        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشهادات والتراخيص</button>
-      </div>
-      <p class="form-note showcase-msg"></p>
-    </div>
-
-    <div class="card showcase-card" data-showcase="awards">
-      <h2>صفحة "من نحن": التكريم والشكر والتقدير</h2>
-      <p class="form-note">شهادات التكريم والجوائز من الجهات الرسمية، وخطابات الشكر والتقدير من العملاء. اختر نوع كل شهادة: لـ«شكر من عميل» اكتب اسم العميل أو الجهة في الوصف (يظهر «من: …») واسم المشروع. عند وجود النوعين تظهر في الموقع أزرار تصفية (الكل / تكريم / شكر العملاء). يُفضّل أخذ موافقة العميل قبل نشر خطابه.</p>
-      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو خطاب شكر</button>
-        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ التكريم والشكر</button>
-      </div>
-      <p class="form-note showcase-msg"></p>
-    </div>
-
-    <div class="card showcase-card" data-showcase="partners">
-      <h2>صفحة "من نحن": شركاؤنا</h2>
-      <p class="form-note">اسم الشريك وشعاره، مع رابط اختياري لموقعه. تظهر الشعارات بالرمادي وتتلوّن عند تمرير الماوس.</p>
-      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شريك</button>
-        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشركاء</button>
-      </div>
-      <p class="form-note showcase-msg"></p>
-    </div>
-
-    <div class="card">
-      <h2>فريق العمل (صفحة "من نحن")</h2>
-      <p class="form-note">أضف أو عدّل أو احذف أعضاء فريق العمل الظاهرين بصفحة "من نحن".</p>
-      <div id="teamEditor" class="banners-editor">
-        <p class="muted">جارِ التحميل...</p>
-      </div>
-      <button type="button" id="addTeamMemberBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة عضو جديد</button>
-      <p id="teamMessage" class="form-note"></p>
     </div>
 
     <div class="card">
@@ -556,23 +419,252 @@
         <p id="mapMessage" class="form-note"></p>
       </form>
     </div>
-
   </section>
 
-  <!-- ============ تبويب أقسام الصفحات ============ -->
-  <section id="tab-sections" class="dash-panel">
+  <!-- ============ تبويب الصفحة الرئيسية ============ -->
+  <section id="tab-page-home" class="dash-panel page-panel" data-page="home">
+    <div class="page-subtabs" role="tablist">
+      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
+      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    </div>
+    <div class="page-sub is-active" data-sub="identity">
     <div class="card">
-      <h2>تخصيص أقسام الموقع</h2>
-      <p class="form-note">كل قسم بطاقة مستقلة: الألوان (الخلفية، البطاقات، النص)، المحتوى، الصورة، والتأثير التفاعلي. اضغط على أي قسم لفتحه، فعّل/عطّل ظهوره من المربع مباشرة، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. ويمكنك إضافة بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
-      <div class="page-switcher" id="sectionsPageSwitcher">
-        <button type="button" class="is-active" data-page="home">الرئيسية</button>
-        <button type="button" data-page="about">من نحن</button>
-        <button type="button" data-page="projects">مشاريعنا</button>
-        <button type="button" data-page="methodology">منهجيتنا</button>
-        <button type="button" data-page="privacy">الخصوصية</button>
+      <h2>شعار ونص البانر الرئيسي</h2>
+      <p class="form-note">شعار مستقل عن شعار رأس الموقع وشعار بطاقات المشاريع، يظهر في منتصف البانر من جهة اليسار. النص (العربي/الإنجليزي) يُحرَّر لكل بانر على حدة بالأسفل.</p>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>شعار البانر</label>
+          <div class="identity-preview" id="bannerLogoPreview">لا يوجد شعار مرفوع بعد</div>
+          <input type="file" id="bannerLogoFile" accept="image/png,image/webp,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، 600 × 600 أو أفقي 800 × 300 بكسل</p>
+          <button type="button" class="btn btn-dark btn-sm" id="bannerLogoUploadBtn">رفع شعار البانر</button>
+        </div>
+        <div class="identity-item">
+          <label class="perm-check"><input type="checkbox" id="bannerLogoVisible"> إظهار الشعار في البانر</label>
+          <label class="perm-check"><input type="checkbox" id="bannerTextVisible"> إظهار النص (العربي/الإنجليزي) في البانر</label>
+        </div>
+      </div>
+      <p id="bannerLogoMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>البانرات (الصفحة الرئيسية — حتى 5 بانرات)</h2>
+      <p class="form-note">تتبدل البانرات تلقائياً كل 3 ثوانٍ في الصفحة الرئيسية. يمكن إضافة رابط لكل بانر، فيُنقل الزائر إليه عند الضغط على البانر.</p>
+      <p class="size-hint">📐 المقاس المقترح: 1920 × 1080 بكسل (16:9). على الجوال تظهر الصورة كاملة، وعلى الكمبيوتر يُقص جزء من أعلاها وأسفلها، فضع النصوص والشعار في الشريط الأوسط (بين الارتفاع 220 و 860 تقريباً).</p>
+      <div id="bannersEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
       </div>
     </div>
-    <div id="sectionsEditor"></div>
+
+    <div class="card">
+      <h2>إحصاءات الصفحة الرئيسية</h2>
+      <p class="form-note">الأرقام الظاهرة في الشريط الكحلي وصندوق الإحصاءات بالصفحة الرئيسية وصفحة "من نحن".</p>
+      <form id="statsForm" class="dash-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="stat-years">سنوات الخبرة</label>
+            <input type="text" id="stat-years" placeholder="15+">
+          </div>
+          <div class="form-field">
+            <label for="stat-projects">المشاريع المنجزة</label>
+            <input type="text" id="stat-projects" placeholder="120+">
+          </div>
+          <div class="form-field">
+            <label for="stat-cities">المناطق التي نخدمها</label>
+            <input type="text" id="stat-cities" placeholder="13">
+          </div>
+          <div class="form-field">
+            <label for="stat-satisfaction">نسبة رضا العملاء</label>
+            <input type="text" id="stat-satisfaction" placeholder="98%">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-sand">حفظ الإحصاءات</button>
+        <p id="statsMessage" class="form-note"></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>الخدمات (الصفحة الرئيسية)</h2>
+      <p class="form-note">أضف أو عدّل أو احذف الخدمات الظاهرة بالصفحة الرئيسية.</p>
+      <div id="servicesEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+      <button type="button" id="addServiceBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة خدمة جديدة</button>
+      <p id="servicesMessage" class="form-note"></p>
+    </div>
+    </div>
+    <div class="page-sub" data-sub="sections">
+    <div class="card">
+      <h2>أقسام الصفحة الرئيسية</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
+    </div>
+      <div class="page-sections-host"><div id="sectionsEditor"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب صفحة "من نحن" ============ -->
+  <section id="tab-page-about" class="dash-panel page-panel" data-page="about">
+    <div class="page-subtabs" role="tablist">
+      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
+      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    </div>
+    <div class="page-sub is-active" data-sub="identity">
+    <div class="card">
+      <h2>خلفية رأس الصفحة</h2>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>خلفية رأس صفحة "من نحن"</label>
+          <div class="identity-preview" id="aboutBgPreview">لا توجد خلفية مرفوعة بعد</div>
+          <input type="file" id="aboutBgFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="about">رفع الخلفية</button>
+        </div>
+      </div>
+      <p id="bgMessage" class="form-note"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="licenses">
+      <h2>صفحة "من نحن": الشهادات والتراخيص</h2>
+      <p class="form-note">صور السجل التجاري، شهادة تصنيف المقاولين، الرخص البلدية، شهادات الجودة... مع عنوان ووصف (مثل الجهة المانحة أو رقم الترخيص) ورابط اختياري للتحقق. يظهر القسم في صفحة "من نحن" عند وجود عنصر ظاهر واحد على الأقل، ويمكن إخفاؤه وترتيبه من «أقسام الصفحات».</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو ترخيص</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشهادات والتراخيص</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="awards">
+      <h2>صفحة "من نحن": التكريم والشكر والتقدير</h2>
+      <p class="form-note">شهادات التكريم والجوائز من الجهات الرسمية، وخطابات الشكر والتقدير من العملاء. اختر نوع كل شهادة: لـ«شكر من عميل» اكتب اسم العميل أو الجهة في الوصف (يظهر «من: …») واسم المشروع. عند وجود النوعين تظهر في الموقع أزرار تصفية (الكل / تكريم / شكر العملاء). يُفضّل أخذ موافقة العميل قبل نشر خطابه.</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شهادة أو خطاب شكر</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ التكريم والشكر</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card showcase-card" data-showcase="partners">
+      <h2>صفحة "من نحن": شركاؤنا</h2>
+      <p class="form-note">اسم الشريك وشعاره، مع رابط اختياري لموقعه. تظهر الشعارات بالرمادي وتتلوّن عند تمرير الماوس.</p>
+      <div class="banners-editor showcase-editor"><p class="muted">جارِ التحميل...</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+        <button type="button" class="btn btn-outline btn-sm showcase-add">+ إضافة شريك</button>
+        <button type="button" class="btn btn-dark btn-sm showcase-save">حفظ الشركاء</button>
+      </div>
+      <p class="form-note showcase-msg"></p>
+    </div>
+
+    <div class="card">
+      <h2>فريق العمل (صفحة "من نحن")</h2>
+      <p class="form-note">أضف أو عدّل أو احذف أعضاء فريق العمل الظاهرين بصفحة "من نحن".</p>
+      <div id="teamEditor" class="banners-editor">
+        <p class="muted">جارِ التحميل...</p>
+      </div>
+      <button type="button" id="addTeamMemberBtn" class="btn btn-outline btn-sm" style="margin-top:10px;">+ إضافة عضو جديد</button>
+      <p id="teamMessage" class="form-note"></p>
+    </div>
+    </div>
+    <div class="page-sub" data-sub="sections">
+    <div class="card">
+      <h2>أقسام صفحة "من نحن"</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
+    </div>
+      <div class="page-sections-host"></div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب صفحة "مشاريعنا" ============ -->
+  <section id="tab-page-projects" class="dash-panel page-panel" data-page="projects">
+    <div class="page-subtabs" role="tablist">
+      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
+      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    </div>
+    <div class="page-sub is-active" data-sub="identity">
+    <div class="card">
+      <h2>خلفية رأس الصفحة</h2>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>خلفية رأس صفحة "مشاريعنا"</label>
+          <div class="identity-preview" id="projectsBgPreview">لا توجد خلفية مرفوعة بعد</div>
+          <input type="file" id="projectsBgFile" accept="image/png,image/jpeg,image/webp">
+          <p class="size-hint">📐 المقاس المقترح: 1920 × 600 بكسل. تظهر باهتة خلف العنوان، وعلى الجوال يظهر وسطها فقط؛ لا تضع فيها نصوصاً</p>
+          <button type="button" class="btn btn-dark btn-sm" data-upload="projects">رفع الخلفية</button>
+        </div>
+      </div>
+      <p id="projectsBgMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>شعار بطاقات المشاريع</h2>
+      <p class="form-note">شعار مستقل تماماً عن شعار رأس الموقع، يظهر كعلامة صغيرة شفافة الخلفية أعلى يسار صورة كل مشروع.</p>
+      <div class="identity-row">
+        <div class="identity-item">
+          <label>شعار بطاقة المشروع</label>
+          <div class="identity-preview" id="projectLogoPreview">لا يوجد شعار مرفوع بعد</div>
+          <input type="file" id="projectLogoFile" accept="image/png,image/webp,image/svg+xml">
+          <p class="size-hint">📐 المقاس المقترح: PNG شفاف، مربع 400 × 400 بكسل</p>
+          <button type="button" class="btn btn-dark btn-sm" id="projectLogoUploadBtn">رفع الشعار</button>
+        </div>
+        <div class="identity-item">
+          <label class="perm-check"><input type="checkbox" id="projectLogoVisible"> إظهار الشعار في بطاقات المشاريع</label>
+        </div>
+      </div>
+      <p id="projectLogoMessage" class="form-note"></p>
+    </div>
+    </div>
+    <div class="page-sub" data-sub="sections">
+    <div class="card">
+      <h2>أقسام صفحة "مشاريعنا"</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
+    </div>
+      <div class="page-sections-host"></div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب صفحة "منهجيتنا" ============ -->
+  <section id="tab-page-methodology" class="dash-panel page-panel" data-page="methodology">
+    <div class="page-subtabs" role="tablist">
+      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
+      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    </div>
+    <div class="page-sub is-active" data-sub="identity">
+    <div class="card">
+      <h2>هوية صفحة "منهجيتنا"</h2>
+      <p class="form-note">ألوان هذه الصفحة وصورها ونصوصها تُعدَّل من بطاقات أقسامها: افتح «الأقسام والبنرات» ثم بطاقة «رأس الصفحة» أو أي قسم آخر. الخطوط والشعار والفوتر مشتركة في «الهوية العامة».</p>
+      <button type="button" class="btn btn-sand btn-sm page-goto-sections">فتح الأقسام والبنرات</button>
+    </div>
+    </div>
+    <div class="page-sub" data-sub="sections">
+    <div class="card">
+      <h2>أقسام صفحة "منهجيتنا"</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
+    </div>
+      <div class="page-sections-host"></div>
+    </div>
+  </section>
+
+  <!-- ============ تبويب صفحة "الخصوصية" ============ -->
+  <section id="tab-page-privacy" class="dash-panel page-panel" data-page="privacy">
+    <div class="page-subtabs" role="tablist">
+      <button type="button" class="page-subtab is-active" data-sub="identity" role="tab">🎨 الهوية والمظهر</button>
+      <button type="button" class="page-subtab" data-sub="sections" role="tab">🧩 الأقسام والبنرات</button>
+    </div>
+    <div class="page-sub is-active" data-sub="identity">
+    <div class="card">
+      <h2>هوية صفحة "الخصوصية"</h2>
+      <p class="form-note">ألوان هذه الصفحة وصورها ونصوصها تُعدَّل من بطاقات أقسامها: افتح «الأقسام والبنرات» ثم بطاقة «رأس الصفحة» أو أي قسم آخر. الخطوط والشعار والفوتر مشتركة في «الهوية العامة».</p>
+      <button type="button" class="btn btn-sand btn-sm page-goto-sections">فتح الأقسام والبنرات</button>
+    </div>
+    </div>
+    <div class="page-sub" data-sub="sections">
+    <div class="card">
+      <h2>أقسام صفحة "الخصوصية"</h2>
+      <p class="form-note">كل قسم بطاقة مستقلة: الألوان، المحتوى، الصورة، والتأثير التفاعلي. فعّل/عطّل ظهوره من المربع، وغيّر مكانه بالأسهم ▲▼ أو بالسحب من ⋮⋮. وأضف بنرات جديدة في أي مكان من الصفحة بزر «إضافة بنر جديد».</p>
+    </div>
+      <div class="page-sections-host"></div>
+    </div>
   </section>
 
   <!-- ============ تبويب وسائل التواصل ============ -->

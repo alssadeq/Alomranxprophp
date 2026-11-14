@@ -2449,13 +2449,32 @@
       });
     }
 
+    /* كل صفحة لها تبويبها: قسم «الهوية والمظهر» وقسم «الأقسام والبنرات» */
     function setupSectionsPageSwitcher() {
-      document.querySelectorAll('#sectionsPageSwitcher button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('#sectionsPageSwitcher button').forEach(b => b.classList.remove('is-active'));
-          btn.classList.add('is-active');
-          loadSectionsEditor(btn.dataset.page);
+      const showSub = (panel, sub) => {
+        panel.querySelectorAll('.page-subtab').forEach(b => b.classList.toggle('is-active', b.dataset.sub === sub));
+        panel.querySelectorAll('.page-sub').forEach(d => d.classList.toggle('is-active', d.dataset.sub === sub));
+        try { localStorage.setItem('dash-page-sub', sub); } catch (e) {}
+      };
+      const openPage = (panel) => {
+        const page = panel.dataset.page;
+        const editor = document.getElementById('sectionsEditor');
+        const host = panel.querySelector('.page-sections-host');
+        if (editor && host && editor.parentElement !== host) host.appendChild(editor);
+        if (page !== currentSectionsPage || !editor.childElementCount) loadSectionsEditor(page);
+      };
+      let savedSub = 'identity';
+      try { savedSub = localStorage.getItem('dash-page-sub') || 'identity'; } catch (e) {}
+      document.querySelectorAll('.page-panel').forEach(panel => {
+        showSub(panel, savedSub === 'sections' ? 'sections' : 'identity');
+        panel.querySelectorAll('.page-subtab').forEach(btn => {
+          btn.addEventListener('click', () => showSub(panel, btn.dataset.sub));
         });
+        panel.querySelectorAll('.page-goto-sections').forEach(btn => {
+          btn.addEventListener('click', () => showSub(panel, 'sections'));
+        });
+        const tab = document.querySelector(`.dash-tab[data-tab="page-${panel.dataset.page}"]`);
+        if (tab) tab.addEventListener('click', () => openPage(panel));
       });
     }
 
@@ -3009,7 +3028,7 @@
         logo: { preset: 'logo', input: 'logoFile', endpoint: '/api/settings/logo', preview: 'logoPreview', msgBox: 'identityMessage' },
         favicon: { preset: 'icon', input: 'faviconFile', endpoint: '/api/settings/favicon', preview: 'faviconPreview', msgBox: 'identityMessage' },
         about: { preset: 'background', input: 'aboutBgFile', endpoint: '/api/settings/background/about', preview: 'aboutBgPreview', msgBox: 'bgMessage' },
-        projects: { preset: 'background', input: 'projectsBgFile', endpoint: '/api/settings/background/projects', preview: 'projectsBgPreview', msgBox: 'bgMessage' },
+        projects: { preset: 'background', input: 'projectsBgFile', endpoint: '/api/settings/background/projects', preview: 'projectsBgPreview', msgBox: 'projectsBgMessage' },
       };
       document.querySelectorAll('[data-upload]').forEach(btn => {
         const key = btn.getAttribute('data-upload');
