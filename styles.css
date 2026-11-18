@@ -1331,3 +1331,9 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
   .custom-banner.cb-h-lg .cb-inner{ min-height:380px; }
   .custom-banner .cb-text{ padding-top:32px; padding-bottom:32px; }
 }
+
+/* صورة "قصتنا" في صفحة من نحن: أوسع قليلاً من النص (كانت النسبة 1.05 للنص و0.95 للصورة) */
+@media (min-width: 921px){
+  #pg-about-story .about-grid{ grid-template-columns: .88fr 1.12fr; gap:48px; }
+  #pg-about-story .about-media img{ height:500px; }
+}
