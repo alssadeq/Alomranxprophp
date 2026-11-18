@@ -55,6 +55,9 @@ if (str_starts_with($path, '/api/')) {
     if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 256 * 1024 && str_contains(strtolower((string)($_SERVER['CONTENT_TYPE'] ?? '')), 'json')) send_json(['error' => 'حجم الطلب كبير جداً.'], 413);
     $p = rtrim($path, '/');
     if (str_starts_with($p, '/api/developer/')) route_developer($p, $verb);
+    // نسخ الأعمال وإعدادات الموقع من لوحة التحكم الرئيسية
+    if ($p === '/api/backups') api_admin_backups($verb);
+    if (preg_match('#^/api/backups/([A-Za-z0-9._-]+(?:/(?:download|restore))?)$#', $p, $bm)) api_admin_backups($verb, $bm[1]);
 
     $routes = [
         // عام

@@ -213,6 +213,7 @@
       }
       if (currentUser.isAdmin) {
         document.getElementById('adminUsersSection').classList.remove('hidden');
+        setupBackups();
       }
 
       // إظهار قسم حذف الحساب للمالكين فقط
@@ -2489,6 +2490,86 @@
           }
         });
       });
+    }
+
+    /* ---------- النسخ الاحتياطي للأعمال وإعدادات الموقع (للمسؤول) ---------- */
+    function setupBackups() {
+      const tabBtn = document.getElementById('backupsTabBtn');
+      if (!tabBtn) return;
+      tabBtn.classList.remove('hidden');
+      const listBox = document.getElementById('bkList');
+      const fmtSize = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+      const fmtDate = (iso) => { try { return new Date(iso).toLocaleString('ar-SA-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return iso; } };
+      async function load() {
+        try {
+          const r = await api('/api/backups');
+          const list = r.backups || [];
+          if (!list.length) { listBox.innerHTML = '<p class="muted">لا توجد نسخ محفوظة بعد. أنشئ أول نسخة من الأعلى.</p>'; return; }
+          listBox.innerHTML = list.map(b => `
+            <div class="bk-item" data-name="${escapeHtml(b.name)}">
+              <span class="bk-item-icon" aria-hidden="true">${b.type === 'works' ? '🏗️' : '🎨'}</span>
+              <div class="bk-item-info">
+                <strong>${escapeHtml(b.typeLabel)}</strong>
+                <small>${escapeHtml(fmtDate(b.createdAt))} · ${fmtSize(b.size)}</small>
+              </div>
+              <div class="bk-item-actions">
+                <a class="btn btn-outline btn-sm" href="/api/backups/${encodeURIComponent(b.name)}/download" download>تنزيل</a>
+                <button type="button" class="btn btn-dark btn-sm" data-bk-restore>استعادة</button>
+                <button type="button" class="btn btn-sm img-del-btn" data-bk-delete>حذف</button>
+              </div>
+            </div>`).join('');
+        } catch (err) { listBox.innerHTML = `<p class="muted">${escapeHtml(err.message)}</p>`; }
+      }
+      const restoreDone = (r) => `تمت الاستعادة: ${r.files} ملف بيانات و${r.images} صورة.` + (r.safetyBackup ? ' حُفظت نسخة من الوضع السابق في القائمة.' : '');
+      document.querySelectorAll('.bk-create').forEach(btn => btn.addEventListener('click', async () => {
+        const msg = document.getElementById('bkCreateMessage');
+        document.querySelectorAll('.bk-create').forEach(b => b.disabled = true);
+        msg.textContent = 'جارِ إنشاء النسخة...';
+        try {
+          const r = await api('/api/backups', { method: 'POST', body: JSON.stringify({ type: btn.dataset.type }) });
+          msg.textContent = `تم إنشاء النسخة (${r.backup.files} ملف). يمكنك تنزيلها من القائمة.`;
+          showToast('تم إنشاء النسخة الاحتياطية.');
+          load();
+        } catch (err) { msg.textContent = 'تعذر إنشاء النسخة: ' + err.message; }
+        finally { document.querySelectorAll('.bk-create').forEach(b => b.disabled = false); }
+      }));
+      listBox.addEventListener('click', async (e) => {
+        const item = e.target.closest('.bk-item');
+        if (!item) return;
+        const name = item.dataset.name;
+        if (e.target.closest('[data-bk-delete]')) {
+          if (!confirm('حذف هذه النسخة الاحتياطية نهائياً؟')) return;
+          try { await api(`/api/backups/${encodeURIComponent(name)}`, { method: 'DELETE' }); showToast('تم حذف النسخة.'); load(); }
+          catch (err) { showToast(err.message); }
+        } else if (e.target.closest('[data-bk-restore]')) {
+          const label = item.querySelector('strong').textContent;
+          if (!confirm(`استعادة «${label}»؟ ستُستبدل البيانات الحالية من هذا النوع بمحتوى النسخة (تُحفظ نسخة من الوضع الحالي أولاً).`)) return;
+          const btn = e.target.closest('button'); btn.disabled = true; btn.textContent = 'جارِ الاستعادة...';
+          try {
+            const r = await api(`/api/backups/${encodeURIComponent(name)}/restore`, { method: 'POST' });
+            showToast(restoreDone(r)); load(); loadIdentity(); loadWorks();
+          } catch (err) { showToast('تعذرت الاستعادة: ' + err.message); }
+          finally { btn.disabled = false; btn.textContent = 'استعادة'; }
+        }
+      });
+      document.getElementById('bkRestoreForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('bkRestoreFile');
+        const msg = document.getElementById('bkRestoreMessage');
+        const btn = document.getElementById('bkRestoreBtn');
+        if (!input.files[0]) { msg.textContent = 'اختر ملف ZIP أولاً.'; return; }
+        if (!confirm('استعادة الأعمال وإعدادات الموقع من هذا الملف؟ ستُستبدل البيانات الحالية من النوع الموجود في الملف.')) return;
+        const fd = new FormData(); fd.append('backup', input.files[0]);
+        btn.disabled = true; msg.textContent = 'جارِ رفع الملف والاستعادة...';
+        try {
+          const r = await api('/api/backups/upload-restore', { method: 'POST', body: fd });
+          msg.textContent = restoreDone(r); input.value = ''; load(); loadIdentity(); loadWorks();
+        } catch (err) { msg.textContent = 'تعذرت الاستعادة: ' + err.message; }
+        finally { btn.disabled = false; }
+      });
+      document.getElementById('bkRefreshBtn').addEventListener('click', load);
+      tabBtn.addEventListener('click', load);
+      load();
     }
 
     /* كل صفحة لها تبويبها: قسم «الهوية والمظهر» وقسم «الأقسام والبنرات» */

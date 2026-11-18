@@ -8,13 +8,19 @@ declare(strict_types=1);
 const DEV_COOKIE = 'alomran_dev_sid';
 const DEV_TTL = 12 * 3600;
 define('BACKUPS_DIR', ROOT_DIR . '/backups');
-const BACKUP_NAME_RE = '/^backup-(?:(data|media|full|site)-\d{8}-\d{6}-\d{3}\.zip|\d{8}-\d{6}-\d{3}\.tar\.gz)$/';
+const BACKUP_NAME_RE = '/^backup-(?:(data|media|full|site|works|settings)-\d{8}-\d{6}-\d{3}\.zip|\d{8}-\d{6}-\d{3}\.tar\.gz)$/';
 const BACKUP_TYPES = [
     'data' => ['label' => 'البيانات فقط', 'dirs' => ['data']],
     'media' => ['label' => 'الصور والملفات المرفوعة', 'dirs' => ['data/uploads', 'images']],
     'full' => ['label' => 'نسخة كاملة (بيانات + ملفات)', 'dirs' => ['data', 'images']],
     'site' => ['label' => 'حزمة الموقع للنقل لاستضافة أخرى', 'dirs' => ['.']],
+    // نسخ جزئية: ملفات JSON المحددة + الصور المستخدمة فيها فقط
+    'works' => ['label' => 'الأعمال (المشاريع وصورها)', 'refs' => ['works.json']],
+    'settings' => ['label' => 'إعدادات الموقع والهوية (مع الصور)', 'refs' => ['settings.json', 'social_platforms.json']],
 ];
+// الأنواع المتاحة للمسؤول من لوحة التحكم الرئيسية، وملفات البيانات التي يُسمح باستعادتها منها
+const ADMIN_BACKUP_TYPES = ['works', 'settings'];
+const ADMIN_RESTORE_DATA = ['works.json', 'settings.json', 'social_platforms.json'];
 const UPDATE_PERMISSIONS = ['view_updates', 'upload_update', 'install_update', 'rollback_update', 'delete_update', 'manage_backups'];
 
 /* ---------- الجلسة ---------- */
@@ -343,13 +349,34 @@ function backup_collect(string $type, string $dir, array &$out): void {
         function ($f) use ($type) { $rel = ltrim(substr($f->getPathname(), strlen(ROOT_DIR)), '/'); return !$f->isLink() && !backup_excluded($type, $rel); }));
     foreach ($it as $f) if ($f->isFile()) $out[] = ltrim(substr($f->getPathname(), strlen(ROOT_DIR)), '/');
 }
+// ملفات البيانات المحددة + كل صورة من /images/ مذكورة داخلها
+function backup_collect_refs(array $jsonFiles): array {
+    $out = [];
+    foreach ($jsonFiles as $f) {
+        $path = DATA_DIR . '/' . $f;
+        if (!is_file($path)) continue;
+        $out[] = 'data/' . $f;
+        $raw = str_replace('\\/', '/', (string)file_get_contents($path));
+        if (preg_match_all('#/images/([A-Za-z0-9._\-/]+\.(?:jpe?g|png|webp|gif|svg|ico|avif))#i', $raw, $m)) {
+            foreach (array_unique($m[1]) as $img) {
+                if (str_contains($img, '..')) continue;
+                // الصور المرفوعة تُحفظ في data/uploads وتُخدم على /images/، وصور التصميم الأصلية في images/
+                if (is_file(UPLOADS_DIR . '/' . $img)) $out[] = 'data/uploads/' . $img;
+                elseif (is_file(ROOT_DIR . '/images/' . $img)) $out[] = 'images/' . $img;
+            }
+        }
+    }
+    return array_values(array_unique($out));
+}
+
 function backup_create(string $by, string $type): array {
     if (!class_exists('ZipArchive')) throw new RuntimeException('مكتبة ZIP غير متاحة في PHP على الاستضافة.');
     backups_ensure();
     $t = microtime(true);
     $name = 'backup-' . $type . '-' . date('Ymd-His', (int)$t) . '-' . sprintf('%03d', (int)(($t - floor($t)) * 1000)) . '.zip';
     $files = [];
-    foreach (BACKUP_TYPES[$type]['dirs'] as $dir) backup_collect($type, $dir, $files);
+    if (isset(BACKUP_TYPES[$type]['refs'])) $files = backup_collect_refs(BACKUP_TYPES[$type]['refs']);
+    else foreach (BACKUP_TYPES[$type]['dirs'] as $dir) backup_collect($type, $dir, $files);
     $files = array_values(array_unique($files));
     if (!$files) throw new RuntimeException('لا توجد ملفات لنسخها في هذا النوع.');
     $path = BACKUPS_DIR . '/' . $name;
@@ -424,7 +451,8 @@ function api_dev_backups(string $method, string $name = ''): void {
 const RESTORE_MAX_TOTAL = 400 * 1024 * 1024;
 const RESTORE_SKIP = ['php-sessions', 'sessions', 'dev_sessions.json', 'ratelimit.json', 'bootstrap-token.txt', '.htaccess', '.notify-tick', 'throttle.json', 'staff_presence.json'];
 
-function backup_restore_zip(string $file, string $by): array {
+// $onlyData: إن حُدد، تُستعاد ملفات البيانات المذكورة فيه فقط (مع الصور). يُستخدم من لوحة التحكم الرئيسية.
+function backup_restore_zip(string $file, string $by, ?array $onlyData = null, string $safetyType = 'full'): array {
     if (!class_exists('ZipArchive')) throw new RuntimeException('مكتبة ZIP غير متاحة في PHP على الاستضافة.');
     $zip = new ZipArchive();
     if ($zip->open($file) !== true) throw new RuntimeException('الملف ليس نسخة احتياطية ZIP صالحة.');
@@ -458,7 +486,30 @@ function backup_restore_zip(string $file, string $by): array {
     if ($dataPrefix === null) { $zip->close(); throw new RuntimeException('لم أجد بيانات الموقع داخل الملف (users.json أو settings.json أو works.json أو مجلد الصور).'); }
 
     // نسخة احتياطية تلقائية من البيانات الحالية قبل الاستبدال
-    $safety = backup_create($by . ' (قبل الاستعادة)', 'full');
+    if ($onlyData !== null) {
+        $hasAllowed = false;
+        foreach (array_keys($names) as $n) {
+            $rel = $dataPrefix === '' ? $n : (str_starts_with($n, $dataPrefix) ? substr($n, strlen($dataPrefix)) : '');
+            if (in_array($rel, $onlyData, true)) { $hasAllowed = true; break; }
+        }
+        if (!$hasAllowed) { $zip->close(); throw new RuntimeException('الملف لا يحتوي على بيانات الأعمال أو إعدادات الموقع.'); }
+    }
+    if ($onlyData !== null) {
+        // نسخة أمان من نفس النوع (تظهر في قائمة لوحة التحكم للرجوع إليها)
+        $present = [];
+        foreach (array_keys($names) as $n) {
+            $rel = $dataPrefix === '' ? $n : (str_starts_with($n, $dataPrefix) ? substr($n, strlen($dataPrefix)) : '');
+            if ($rel === 'works.json') $present['works'] = true;
+            if ($rel === 'settings.json' || $rel === 'social_platforms.json') $present['settings'] = true;
+        }
+        $names_ = [];
+        foreach (array_keys($present) as $t) {
+            try { $names_[] = backup_create($by . ' (قبل الاستعادة)', $t)['name']; } catch (RuntimeException $e) { /* لا توجد بيانات حالية من هذا النوع */ }
+        }
+        $safety = ['name' => implode('، ', $names_)];
+    } else {
+        $safety = backup_create($by . ' (قبل الاستعادة)', $safetyType);
+    }
 
     $restored = 0;
     $images = 0;
@@ -476,6 +527,8 @@ function backup_restore_zip(string $file, string $by): array {
             if (@file_put_contents($target, $zip->getFromIndex($i)) !== false) $images++;
             continue;
         } else continue;
+        if ($onlyData !== null && !in_array($rel, $onlyData, true)
+            && !preg_match('#^uploads/[A-Za-z0-9._\-]+\.(?:jpe?g|png|webp|gif|svg|ico|avif)$#i', $rel)) continue;
         $first = explode('/', $rel)[0];
         if ($rel === '' || in_array($first, RESTORE_SKIP, true) || str_starts_with(basename($rel), '.lock-') || str_contains($rel, '.tmp')) continue;
         $target = DATA_DIR . '/' . $rel;
@@ -585,5 +638,79 @@ function route_developer(string $path, string $method): void {
     if ($sub === 'backups' || str_starts_with($sub, 'backups/')) api_dev_backups($method, ltrim(substr($sub, strlen('backups')), '/'));
     if ($sub === 'exports' || str_starts_with($sub, 'exports/')) api_dev_exports(ltrim(substr($sub, strlen('exports')), '/'));
     if (str_starts_with($sub, 'updates/') || str_starts_with($sub, 'version-check')) api_dev_updates($sub, $method);
+    send_json(['error' => 'غير موجود.'], 404);
+}
+
+/* ---------- نسخ الأعمال وإعدادات الموقع من لوحة التحكم الرئيسية (للمسؤول) ---------- */
+// المسؤول يرى وينشئ ويستعيد نسخ «الأعمال» و«الإعدادات» فقط، والاستعادة لا تلمس
+// الحسابات أو الرسائل أو أي بيانات أخرى (قائمة بيضاء ADMIN_RESTORE_DATA).
+
+function admin_backup_path(string $name): ?string {
+    if (!preg_match(BACKUP_NAME_RE, $name, $m) || !in_array($m[1] ?? '', ADMIN_BACKUP_TYPES, true)) return null;
+    return backup_path($name);
+}
+
+function api_admin_backups(string $method, string $name = ''): void {
+    $u = require_admin();
+    $by = (string)($u['username'] ?? '');
+    if ($name === '' && $method === 'GET') {
+        backups_ensure();
+        $list = [];
+        foreach (scandir(BACKUPS_DIR) ?: [] as $f) {
+            if (!preg_match(BACKUP_NAME_RE, $f, $m) || !in_array($m[1] ?? '', ADMIN_BACKUP_TYPES, true)) continue;
+            $list[] = ['name' => $f, 'type' => $m[1], 'typeLabel' => BACKUP_TYPES[$m[1]]['label'], 'size' => filesize(BACKUPS_DIR . "/$f"), 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime(BACKUPS_DIR . "/$f"))];
+        }
+        usort($list, fn($a, $b) => strcmp($b['createdAt'], $a['createdAt']));
+        send_json(['backups' => $list]);
+    }
+    if ($name === '' && $method === 'POST') {
+        $type = str_val(json_body()['type'] ?? '');
+        if (!in_array($type, ADMIN_BACKUP_TYPES, true)) send_json(['error' => 'نوع النسخة غير معروف.'], 400);
+        rate_limit('admin_backup', 30, 3600, 'تم تجاوز عدد النسخ المسموح خلال ساعة. حاول لاحقاً.', (string)$u['id']);
+        @set_time_limit(300);
+        try { $r = backup_create($by, $type); }
+        catch (Throwable $e) { log_error('فشل إنشاء نسخة احتياطية من لوحة التحكم: ' . $e->getMessage()); send_json(['error' => 'تعذر إنشاء النسخة: ' . $e->getMessage()], 500); }
+        log_activity('backup_create', 'backup', BACKUP_TYPES[$type]['label'] . ' — ' . $r['name']);
+        send_json(['ok' => true, 'backup' => $r], 201);
+    }
+    if ($method === 'POST' && ($name === 'upload-restore' || preg_match('#^(.+)/restore$#', $name))) {
+        rate_limit('admin_backup_restore', 10, 3600, 'تم تجاوز عدد عمليات الاستعادة. حاول لاحقاً.', (string)$u['id']);
+        @set_time_limit(600);
+        if ($name === 'upload-restore') {
+            if (empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) send_json(['error' => 'حجم الملف أكبر من المسموح في إعدادات الاستضافة.'], 400);
+            $f = uploaded_files('backup')[0] ?? null;
+            if (!$f) send_json(['error' => 'اختر ملف النسخة الاحتياطية ZIP.'], 400);
+            if ($f['error'] !== UPLOAD_ERR_OK || !is_upload($f['tmp'])) send_json(['error' => 'تعذر رفع الملف.'], 400);
+            if (!preg_match('/\.zip$/i', (string)$f['name'])) send_json(['error' => 'يجب رفع ملف ZIP.'], 400);
+            $src = $f['tmp'];
+            $label = mb_slice((string)$f['name'], 120) . ' (مرفوع)';
+        } else {
+            $bn = substr($name, 0, -strlen('/restore'));
+            $src = admin_backup_path($bn);
+            if (!$src) send_json(['error' => 'النسخة الاحتياطية غير موجودة.'], 404);
+            $label = $bn;
+        }
+        try { $r = backup_restore_zip($src, $by, ADMIN_RESTORE_DATA); }
+        catch (RuntimeException $e) { send_json(['error' => $e->getMessage()], 400); }
+        log_activity('backup_restore', 'backup', $label . ' — ' . $r['files'] . ' ملف، ' . $r['images'] . ' صورة');
+        send_json(['ok' => true] + $r);
+    }
+    if (preg_match('#^(.+)/download$#', $name, $m) && $method === 'GET') {
+        $p = admin_backup_path($m[1]);
+        if (!$p) send_json(['error' => 'النسخة الاحتياطية غير موجودة.'], 404);
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $m[1] . '"');
+        header('Content-Length: ' . filesize($p));
+        header('Cache-Control: no-store');
+        readfile($p);
+        exit;
+    }
+    if ($method === 'DELETE' && $name !== '') {
+        $p = admin_backup_path($name);
+        if (!$p) send_json(['error' => 'النسخة الاحتياطية غير موجودة.'], 404);
+        unlink($p);
+        log_activity('backup_delete', 'backup', $name);
+        send_json(['ok' => true]);
+    }
     send_json(['error' => 'غير موجود.'], 404);
 }

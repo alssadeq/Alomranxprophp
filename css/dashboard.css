@@ -1065,3 +1065,31 @@ body[data-theme="dark"] .page-subtab.is-active{ background: var(--sand); color:#
 .sec-current-img .img-del-btn{ margin:0; }
 body[data-theme="dark"] .img-del-btn{ background:transparent; color:#f0a59a; border-color:rgba(240,165,154,.4); }
 body[data-theme="dark"] .sec-current-img{ background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.15); }
+
+/* ===== تبويب النسخ الاحتياطي ===== */
+.bk-create-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+.bk-create{
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:right;
+  padding:16px; border:1.5px solid #e4ded3; border-radius:14px; background:#faf8f4;
+  font:inherit; color:inherit; cursor:pointer; transition:border-color .2s, box-shadow .2s, transform .2s;
+}
+.bk-create:hover{ border-color: var(--sand); box-shadow:0 6px 16px rgba(30,42,50,.08); transform:translateY(-1px); }
+.bk-create:disabled{ opacity:.6; cursor:wait; transform:none; }
+.bk-create .bk-icon{ font-size:1.6rem; }
+.bk-create strong{ font-size:1rem; }
+.bk-create small{ font-size:.8rem; color:#6b6e72; line-height:1.6; }
+.bk-list{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+.bk-item{ display:flex; align-items:center; gap:12px; padding:12px; border:1px solid #ece7de; border-radius:12px; background:#fff; }
+.bk-item-icon{ font-size:1.4rem; }
+.bk-item-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.bk-item-info small{ color:#6b6e72; font-size:.8rem; }
+.bk-item-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.bk-item-actions .img-del-btn{ margin:0; }
+body[data-theme="dark"] .bk-create, body[data-theme="dark"] .bk-item{ background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.12); }
+body[data-theme="dark"] .bk-create small, body[data-theme="dark"] .bk-item-info small{ color:rgba(255,255,255,.6); }
+@media (max-width:600px){
+  .bk-create-grid{ grid-template-columns:1fr; }
+  .bk-item{ flex-wrap:wrap; }
+  .bk-item-actions{ width:100%; }
+  .bk-item-actions > *{ flex:1; text-align:center; }
+}

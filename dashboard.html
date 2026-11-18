@@ -101,6 +101,7 @@
       <button class="dash-tab" data-tab="social" role="tab">وسائل التواصل</button>
       <div class="nav-group-label">الإدارة</div>
       <button class="dash-tab" data-tab="activity" role="tab">سجل النشاط</button>
+      <button class="dash-tab hidden" data-tab="backups" role="tab" id="backupsTabBtn">النسخ الاحتياطي</button>
       <button class="dash-tab hidden" data-tab="notifications" role="tab">الإشعارات</button>
       <button class="dash-tab" data-tab="account" role="tab">الحساب والمستخدمين</button>
     </nav>
@@ -723,6 +724,45 @@
   <!-- ============ تبويب محتوى الصفحات ============ -->
 
   <!-- ============ تبويب سجل النشاط ============ -->
+  <!-- ============ تبويب النسخ الاحتياطي (للمسؤول) ============ -->
+  <section id="tab-backups" class="dash-panel">
+    <div class="card">
+      <h2>نسخة احتياطية جديدة</h2>
+      <p class="form-note">احفظ نسخة من أعمال الموقع أو من إعداداته (مع الصور المستخدمة فيها) لتستعيدها لاحقاً عند الحاجة. تُحفظ النسخ على الخادم ويمكنك تنزيلها إلى جهازك.</p>
+      <div class="bk-create-grid">
+        <button type="button" class="bk-create" data-type="works">
+          <span class="bk-icon" aria-hidden="true">🏗️</span>
+          <strong>نسخة الأعمال</strong>
+          <small>كل المشاريع وتفاصيلها وصورها</small>
+        </button>
+        <button type="button" class="bk-create" data-type="settings">
+          <span class="bk-icon" aria-hidden="true">🎨</span>
+          <strong>نسخة إعدادات الموقع</strong>
+          <small>الهوية، الأقسام، البنرات، وسائل التواصل وصورها</small>
+        </button>
+      </div>
+      <p id="bkCreateMessage" class="form-note"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head-row">
+        <h2>النسخ المحفوظة</h2>
+        <button type="button" class="btn btn-outline btn-sm" id="bkRefreshBtn">تحديث</button>
+      </div>
+      <div id="bkList" class="bk-list"><p class="muted">جارِ التحميل...</p></div>
+    </div>
+
+    <div class="card">
+      <h2>استعادة من ملف على جهازك</h2>
+      <p class="form-note">ارفع ملف نسخة (ZIP) نزّلته سابقاً من هنا أو من لوحة المطوّر. تُستعاد <strong>الأعمال وإعدادات الموقع وصورها فقط</strong>، ولا تتأثر الحسابات أو الرسائل. قبل الاستعادة تُحفظ نسخة تلقائية من الوضع الحالي للرجوع إليها.</p>
+      <form id="bkRestoreForm" class="dash-form">
+        <input type="file" id="bkRestoreFile" accept=".zip,application/zip">
+        <button type="submit" class="btn btn-dark btn-sm" id="bkRestoreBtn">استعادة من الملف</button>
+      </form>
+      <p id="bkRestoreMessage" class="form-note"></p>
+    </div>
+  </section>
+
   <section id="tab-activity" class="dash-panel">
     <div class="card">
       <div class="card-head-row">
