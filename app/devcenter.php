@@ -8,7 +8,7 @@ declare(strict_types=1);
 const DEV_COOKIE = 'alomran_dev_sid';
 const DEV_TTL = 12 * 3600;
 define('BACKUPS_DIR', ROOT_DIR . '/backups');
-const BACKUP_NAME_RE = '/^backup-(?:(data|media|full|site|works|settings)-\d{8}-\d{6}-\d{3}\.zip|\d{8}-\d{6}-\d{3}\.tar\.gz)$/';
+const BACKUP_NAME_RE = '/^backup-(?:(data|media|full|site|works|settings|custom)-\d{8}-\d{6}-\d{3}\.zip|\d{8}-\d{6}-\d{3}\.tar\.gz)$/';
 const BACKUP_TYPES = [
     'data' => ['label' => 'البيانات فقط', 'dirs' => ['data']],
     'media' => ['label' => 'الصور والملفات المرفوعة', 'dirs' => ['data/uploads', 'images']],
@@ -17,9 +17,19 @@ const BACKUP_TYPES = [
     // نسخ جزئية: ملفات JSON المحددة + الصور المستخدمة فيها فقط
     'works' => ['label' => 'الأعمال (المشاريع وصورها)', 'refs' => ['works.json']],
     'settings' => ['label' => 'إعدادات الموقع والهوية (مع الصور)', 'refs' => ['settings.json', 'social_platforms.json']],
+    'custom' => ['label' => 'نسخة مخصصة', 'parts' => true],
+];
+// أجزاء النسخة المخصصة: يختار المستخدم ما يريد نسخه بمربعات اختيار
+const BACKUP_PARTS = [
+    'works' => 'الأعمال وصورها',
+    'banners' => 'البنرات (الرئيسية والإضافية في كل الصفحات)',
+    'pages' => 'صور رؤوس الصفحات والأقسام (الهيرو، من نحن، مشاريعنا...)',
+    'identity' => 'الشعار والأيقونة وشعار البانر وشعار المشاريع وصورة المشاركة',
+    'showcase' => 'الشهادات والتكريم والشركاء وصورها',
+    'settings' => 'إعدادات الموقع كاملة (النصوص والألوان والأقسام ووسائل التواصل)',
 ];
 // الأنواع المتاحة للمسؤول من لوحة التحكم الرئيسية، وملفات البيانات التي يُسمح باستعادتها منها
-const ADMIN_BACKUP_TYPES = ['works', 'settings'];
+const ADMIN_BACKUP_TYPES = ['works', 'settings', 'custom'];
 const ADMIN_RESTORE_DATA = ['works.json', 'settings.json', 'social_platforms.json'];
 const UPDATE_PERMISSIONS = ['view_updates', 'upload_update', 'install_update', 'rollback_update', 'delete_update', 'manage_backups'];
 
@@ -369,13 +379,114 @@ function backup_collect_refs(array $jsonFiles): array {
     return array_values(array_unique($out));
 }
 
-function backup_create(string $by, string $type): array {
+/* ---------- النسخة المخصصة (أجزاء مختارة) ---------- */
+
+// القيم الخاصة بكل جزء داخل الإعدادات (لنسخ صورها واستعادتها دون لمس باقي الإعدادات)
+function backup_part_values(array $s, string $part): array {
+    switch ($part) {
+        case 'banners': return ['banners' => $s['banners'] ?? [], 'customBanners' => $s['customBanners'] ?? []];
+        case 'identity':
+            return ['logo' => $s['logo'] ?? '', 'favicon' => $s['favicon'] ?? '', 'bannerLogo' => $s['bannerLogo'] ?? null,
+                'projectLogo' => $s['projectLogo'] ?? null, 'shareImage' => $s['share']['image'] ?? ''];
+        case 'pages':
+            $ps = [];
+            foreach (($s['pageSections'] ?? []) as $page => $secs) {
+                if (!is_array($secs)) continue;
+                foreach ($secs as $k => $x) {
+                    if (!is_array($x)) continue;
+                    $ps[$page][$k] = ['bgImage' => $x['bgImage'] ?? '', 'bgMode' => $x['bgMode'] ?? 'color', 'image' => $x['image'] ?? '', 'imageMode' => $x['imageMode'] ?? 'upload'];
+                }
+            }
+            return ['aboutHeroBg' => $s['aboutHeroBg'] ?? '', 'projectsHeroBg' => $s['projectsHeroBg'] ?? '', 'pageSections' => $ps];
+        case 'showcase': return ['licenses' => $s['licenses'] ?? [], 'awards' => $s['awards'] ?? [], 'partners' => $s['partners'] ?? []];
+    }
+    return [];
+}
+
+// مسارات الصور (/images/...) المذكورة في نص JSON → ملفات داخل الموقع
+function backup_image_files(string $json): array {
+    $out = [];
+    $raw = str_replace('\\/', '/', $json);
+    if (preg_match_all('#/images/([A-Za-z0-9._\-/]+\.(?:jpe?g|png|webp|gif|svg|ico|avif))#i', $raw, $m)) {
+        foreach (array_unique($m[1]) as $img) {
+            if (str_contains($img, '..')) continue;
+            if (is_file(UPLOADS_DIR . '/' . $img)) $out[] = 'data/uploads/' . $img;
+            elseif (is_file(ROOT_DIR . '/images/' . $img)) $out[] = 'images/' . $img;
+        }
+    }
+    return $out;
+}
+
+function backup_parts_clean(array $parts): array {
+    return array_values(array_filter(array_unique(array_map('strval', $parts)), fn($p) => isset(BACKUP_PARTS[$p])));
+}
+
+function backup_parts_label(array $parts): string {
+    return implode('، ', array_map(fn($p) => preg_replace('/\s*\(.*$/u', '', BACKUP_PARTS[$p] ?? $p), $parts));
+}
+
+function backup_collect_parts(array $parts): array {
+    $files = [];
+    if (in_array('works', $parts, true)) $files = array_merge($files, backup_collect_refs(['works.json']));
+    if (in_array('settings', $parts, true)) $files = array_merge($files, backup_collect_refs(['settings.json', 'social_platforms.json']));
+    $partial = array_diff($parts, ['works', 'settings']);
+    if ($partial) {
+        $s = get_settings();
+        if (is_file(DATA_DIR . '/settings.json')) $files[] = 'data/settings.json';
+        foreach ($partial as $p) $files = array_merge($files, backup_image_files(json_out_str(backup_part_values($s, $p))));
+    }
+    return array_values(array_unique($files));
+}
+
+function backup_manifest_is_auto(string $path): bool {
+    $z = new ZipArchive();
+    if ($z->open($path) !== true) return false;
+    $m = json_decode((string)$z->getFromName('backup-manifest.json'), true);
+    $z->close();
+    return str_contains((string)($m['createdBy'] ?? ''), 'قبل الاستعادة');
+}
+
+// يُقرأ من ملف النسخة: الأجزاء المحفوظة فيها (للنسخ المخصصة فقط)
+function backup_manifest_parts(string $path): ?array {
+    if (!class_exists('ZipArchive')) return null;
+    $z = new ZipArchive();
+    if ($z->open($path) !== true) return null;
+    $raw = $z->getFromName('backup-manifest.json');
+    $z->close();
+    if ($raw === false) return null;
+    $m = json_decode($raw, true);
+    return is_array($m['parts'] ?? null) ? backup_parts_clean($m['parts']) : null;
+}
+
+// الأحدث أولاً، بدقة الملّي ثانية من اسم الملف (عدة نسخ قد تُنشأ في نفس الثانية)
+function backup_sort_desc(array $a, array $b): int {
+    $k = fn($e) => preg_match('/(\d{8}-\d{6}-\d{3})/', $e['name'], $m) ? $m[1] : $e['createdAt'];
+    return strcmp($k($b), $k($a));
+}
+
+function backup_list_entry(string $f, string $type): array {
+    $path = BACKUPS_DIR . "/$f";
+    $e = ['name' => $f, 'type' => $type, 'typeLabel' => BACKUP_TYPES[$type]['label'], 'size' => filesize($path), 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime($path))];
+    if ($type === 'custom') {
+        $parts = backup_manifest_parts($path) ?? [];
+        $e['auto'] = backup_manifest_is_auto($path);
+        $e['parts'] = $parts;
+        $e['typeLabel'] = $parts ? backup_parts_label($parts) : 'نسخة مخصصة';
+    }
+    return $e;
+}
+
+function backup_create(string $by, string $type, array $parts = []): array {
     if (!class_exists('ZipArchive')) throw new RuntimeException('مكتبة ZIP غير متاحة في PHP على الاستضافة.');
     backups_ensure();
     $t = microtime(true);
     $name = 'backup-' . $type . '-' . date('Ymd-His', (int)$t) . '-' . sprintf('%03d', (int)(($t - floor($t)) * 1000)) . '.zip';
     $files = [];
-    if (isset(BACKUP_TYPES[$type]['refs'])) $files = backup_collect_refs(BACKUP_TYPES[$type]['refs']);
+    if ($type === 'custom') {
+        $parts = backup_parts_clean($parts);
+        if (!$parts) throw new RuntimeException('اختر جزءاً واحداً على الأقل لنسخه.');
+        $files = backup_collect_parts($parts);
+    } elseif (isset(BACKUP_TYPES[$type]['refs'])) $files = backup_collect_refs(BACKUP_TYPES[$type]['refs']);
     else foreach (BACKUP_TYPES[$type]['dirs'] as $dir) backup_collect($type, $dir, $files);
     $files = array_values(array_unique($files));
     if (!$files) throw new RuntimeException('لا توجد ملفات لنسخها في هذا النوع.');
@@ -383,6 +494,7 @@ function backup_create(string $by, string $type): array {
     $zip = new ZipArchive();
     if ($zip->open($path . '.partial', ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) throw new RuntimeException('تعذر إنشاء ملف ZIP.');
     foreach ($files as $rel) $zip->addFile(ROOT_DIR . '/' . $rel, $rel);
+    if ($type === 'custom') $zip->addFromString('backup-manifest.json', json_encode(['parts' => $parts, 'createdAt' => now_iso(), 'createdBy' => $by, 'version' => app_version()], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     if ($type === 'site') $zip->addFromString('MIGRATION-README.md', "# نقل موقع العمران (نسخة PHP)\n\nأُنشئت هذه الحزمة بتاريخ " . now_iso() . ($by ? " بواسطة $by" : '') . " (الإصدار " . app_version() . ").\n\n1. ارفع الحزمة إلى public_html في الاستضافة الجديدة واستخرجها.\n2. اختر PHP 8.2 أو أحدث.\n3. افتح الموقع وسجّل الدخول بحساباتك الحالية.\n");
     if (!$zip->close()) { @unlink($path . '.partial'); throw new RuntimeException('تعذر حفظ ملف ZIP.'); }
     rename($path . '.partial', $path);
@@ -390,7 +502,7 @@ function backup_create(string $by, string $type): array {
     if ($check->open($path, ZipArchive::CHECKCONS) !== true) { @unlink($path); throw new RuntimeException('فشل التحقق من سلامة النسخة الاحتياطية بعد إنشائها.'); }
     $n = $check->numFiles;
     $check->close();
-    return ['name' => $name, 'type' => $type, 'size' => filesize($path), 'files' => $n, 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime($path)), 'createdBy' => $by ?: null, 'verified' => true];
+    return ['name' => $name, 'type' => $type, 'parts' => $type === 'custom' ? $parts : null, 'size' => filesize($path), 'files' => $n, 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime($path)), 'createdBy' => $by ?: null, 'verified' => true];
 }
 function backup_path(string $name): ?string {
     if (!preg_match(BACKUP_NAME_RE, $name)) return null;
@@ -406,18 +518,22 @@ function api_dev_backups(string $method, string $name = ''): void {
         foreach (scandir(BACKUPS_DIR) ?: [] as $f) {
             if (!preg_match(BACKUP_NAME_RE, $f, $m)) continue;
             $type = ($m[1] ?? '') ?: 'data';
-            $list[] = ['name' => $f, 'type' => $type, 'typeLabel' => BACKUP_TYPES[$type]['label'], 'size' => filesize(BACKUPS_DIR . "/$f"), 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime(BACKUPS_DIR . "/$f"))];
+            $list[] = backup_list_entry($f, $type);
         }
-        usort($list, fn($a, $b) => strcmp($b['createdAt'], $a['createdAt']));
-        send_json(['backups' => $list, 'types' => array_map(fn($k) => ['id' => $k, 'label' => BACKUP_TYPES[$k]['label']], array_keys(BACKUP_TYPES))]);
+        usort($list, 'backup_sort_desc');
+        send_json(['backups' => $list, 'types' => array_map(fn($k) => ['id' => $k, 'label' => BACKUP_TYPES[$k]['label']], array_keys(BACKUP_TYPES)),
+            'parts' => array_map(fn($k) => ['id' => $k, 'label' => BACKUP_PARTS[$k]], array_keys(BACKUP_PARTS))]);
     }
     if ($name === 'upload-restore' && $method === 'POST') api_dev_backup_restore(null);
     if (preg_match('#^(.+)/restore$#', $name, $rm) && $method === 'POST') api_dev_backup_restore($rm[1]);
     if ($name === '' && $method === 'POST') {
-        $type = str_val(json_body()['type'] ?? '') ?: 'data';
+        $body = json_body();
+        $type = str_val($body['type'] ?? '') ?: 'data';
         if (!isset(BACKUP_TYPES[$type])) send_json(['error' => 'نوع النسخة غير معروف.'], 400);
+        $parts = backup_parts_clean(is_array($body['parts'] ?? null) ? $body['parts'] : []);
+        if ($type === 'custom' && !$parts) send_json(['error' => 'اختر جزءاً واحداً على الأقل لنسخه.'], 400);
         @set_time_limit(300);
-        try { $r = backup_create($d['username'], $type); }
+        try { $r = backup_create($d['username'], $type, $parts); }
         catch (Throwable $e) { log_error('فشل إنشاء نسخة احتياطية: ' . $e->getMessage()); send_json(['error' => 'تعذر إنشاء نسخة احتياطية. راجع سجل الأخطاء.'], 500); }
         log_dev_action($d, 'backup_create', $r['name'] . ' (' . $r['files'] . ' ملف)');
         send_json(['ok' => true, 'backup' => $r], 201);
@@ -486,6 +602,17 @@ function backup_restore_zip(string $file, string $by, ?array $onlyData = null, s
     if ($dataPrefix === null) { $zip->close(); throw new RuntimeException('لم أجد بيانات الموقع داخل الملف (users.json أو settings.json أو works.json أو مجلد الصور).'); }
 
     // نسخة احتياطية تلقائية من البيانات الحالية قبل الاستبدال
+    // نسخة مخصصة (فيها backup-manifest.json): تُستعاد الأجزاء المحفوظة فيها فقط
+    $manifestIdx = null;
+    foreach ($names as $n => $i) if ($n === 'backup-manifest.json' || str_ends_with($n, '/backup-manifest.json')) { $manifestIdx = $i; break; }
+    if ($manifestIdx !== null) {
+        $m = json_decode((string)$zip->getFromIndex($manifestIdx), true);
+        $parts = backup_parts_clean(is_array($m['parts'] ?? null) ? $m['parts'] : []);
+        if ($parts) {
+            try { return backup_restore_custom($zip, $names, $dataPrefix, $imgPrefix, $parts, $by); }
+            finally { @$zip->close(); }
+        }
+    }
     if ($onlyData !== null) {
         $hasAllowed = false;
         foreach (array_keys($names) as $n) {
@@ -658,19 +785,22 @@ function api_admin_backups(string $method, string $name = ''): void {
         $list = [];
         foreach (scandir(BACKUPS_DIR) ?: [] as $f) {
             if (!preg_match(BACKUP_NAME_RE, $f, $m) || !in_array($m[1] ?? '', ADMIN_BACKUP_TYPES, true)) continue;
-            $list[] = ['name' => $f, 'type' => $m[1], 'typeLabel' => BACKUP_TYPES[$m[1]]['label'], 'size' => filesize(BACKUPS_DIR . "/$f"), 'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z', filemtime(BACKUPS_DIR . "/$f"))];
+            $list[] = backup_list_entry($f, $m[1]);
         }
-        usort($list, fn($a, $b) => strcmp($b['createdAt'], $a['createdAt']));
-        send_json(['backups' => $list]);
+        usort($list, 'backup_sort_desc');
+        send_json(['backups' => $list, 'parts' => array_map(fn($k) => ['id' => $k, 'label' => BACKUP_PARTS[$k]], array_keys(BACKUP_PARTS))]);
     }
     if ($name === '' && $method === 'POST') {
-        $type = str_val(json_body()['type'] ?? '');
+        $body = json_body();
+        $type = str_val($body['type'] ?? '') ?: 'custom';
         if (!in_array($type, ADMIN_BACKUP_TYPES, true)) send_json(['error' => 'نوع النسخة غير معروف.'], 400);
+        $parts = backup_parts_clean(is_array($body['parts'] ?? null) ? $body['parts'] : []);
+        if ($type === 'custom' && !$parts) send_json(['error' => 'اختر جزءاً واحداً على الأقل لنسخه.'], 400);
         rate_limit('admin_backup', 30, 3600, 'تم تجاوز عدد النسخ المسموح خلال ساعة. حاول لاحقاً.', (string)$u['id']);
         @set_time_limit(300);
-        try { $r = backup_create($by, $type); }
+        try { $r = backup_create($by, $type, $parts); }
         catch (Throwable $e) { log_error('فشل إنشاء نسخة احتياطية من لوحة التحكم: ' . $e->getMessage()); send_json(['error' => 'تعذر إنشاء النسخة: ' . $e->getMessage()], 500); }
-        log_activity('backup_create', 'backup', BACKUP_TYPES[$type]['label'] . ' — ' . $r['name']);
+        log_activity('backup_create', 'backup', ($type === 'custom' ? backup_parts_label($parts) : BACKUP_TYPES[$type]['label']) . ' — ' . $r['name']);
         send_json(['ok' => true, 'backup' => $r], 201);
     }
     if ($method === 'POST' && ($name === 'upload-restore' || preg_match('#^(.+)/restore$#', $name))) {
@@ -713,4 +843,89 @@ function api_admin_backups(string $method, string $name = ''): void {
         send_json(['ok' => true]);
     }
     send_json(['error' => 'غير موجود.'], 404);
+}
+
+// استعادة نسخة مخصصة: الأعمال/الإعدادات الكاملة تُستبدل، أما البنرات والصور والهوية
+// والشهادات فتُدمج حقولها فقط داخل الإعدادات الحالية (لا تتأثر النصوص والألوان).
+function backup_restore_custom(ZipArchive $zip, array $names, string $dataPrefix, ?string $imgPrefix, array $parts, string $by): array {
+    $read = function (string $rel) use ($zip, $names, $dataPrefix) {
+        $i = $names[$dataPrefix . $rel] ?? null;
+        return $i === null ? null : $zip->getFromIndex($i);
+    };
+    $worksRaw = in_array('works', $parts, true) ? $read('works.json') : null;
+    $settingsRaw = $read('settings.json');
+    $socialRaw = in_array('settings', $parts, true) ? $read('social_platforms.json') : null;
+    if (in_array('works', $parts, true) && ($worksRaw === null || !is_array(json_decode($worksRaw, true)))) throw new RuntimeException('ملف الأعمال داخل النسخة تالف أو مفقود.');
+    $partial = array_values(array_diff($parts, ['works', 'settings']));
+    $bk = null;
+    if (in_array('settings', $parts, true) || $partial) {
+        $bk = $settingsRaw === null ? null : json_decode_keep($settingsRaw);
+        if (!is_array($bk)) throw new RuntimeException('ملف الإعدادات داخل النسخة تالف أو مفقود.');
+    }
+
+    // نسخة أمان من نفس الأجزاء قبل الاستبدال
+    $safety = backup_create($by . ' (قبل الاستعادة)', 'custom', $parts);
+
+    // الصور أولاً حتى تكون موجودة عند تحديث الإعدادات
+    $images = 0;
+    foreach ($names as $n => $i) {
+        $target = null;
+        if (str_starts_with($n, $dataPrefix . 'uploads/')) {
+            $f = substr($n, strlen($dataPrefix . 'uploads/'));
+            if (preg_match('#^[A-Za-z0-9._\-]+\.(?:jpe?g|png|webp|gif|svg|ico|avif)$#i', $f)) $target = UPLOADS_DIR . '/' . $f;
+        } elseif ($imgPrefix !== null && str_starts_with($n, $imgPrefix)) {
+            $f = substr($n, strlen($imgPrefix));
+            if (preg_match('#^[A-Za-z0-9._\-/]+\.(?:jpe?g|png|webp|gif|svg|ico|avif)$#i', $f) && !str_contains($f, '..')) $target = ROOT_DIR . '/images/' . $f;
+        }
+        if ($target === null) continue;
+        if (!is_dir(dirname($target))) @mkdir(dirname($target), 0755, true);
+        if (@file_put_contents($target, $zip->getFromIndex($i)) !== false) $images++;
+    }
+
+    $files = 0;
+    if ($worksRaw !== null) {
+        with_lock('works', function () use ($worksRaw) { write_json('works.json', json_decode_keep($worksRaw)); });
+        $files++;
+    }
+    if (in_array('settings', $parts, true)) {
+        with_lock('settings', function () use ($bk) { write_json('settings.json', $bk); });
+        $files++;
+        if ($socialRaw !== null && is_array(json_decode($socialRaw, true))) { write_json('social_platforms.json', json_decode_keep($socialRaw)); $files++; }
+    } elseif ($partial) {
+        settings_mutate(function (&$cur) use ($bk, $partial) {
+            foreach ($partial as $p) backup_apply_part($cur, $bk, $p);
+        });
+        $files++;
+    }
+    return ['files' => $files, 'images' => $images, 'parts' => $parts, 'safetyBackup' => $safety['name']];
+}
+
+function backup_apply_part(array &$cur, array $bk, string $part): void {
+    switch ($part) {
+        case 'banners':
+            if (array_key_exists('banners', $bk)) $cur['banners'] = $bk['banners'];
+            if (array_key_exists('customBanners', $bk)) $cur['customBanners'] = $bk['customBanners'];
+            break;
+        case 'identity':
+            foreach (['logo', 'favicon', 'bannerLogo', 'projectLogo'] as $k) if (array_key_exists($k, $bk)) $cur[$k] = $bk[$k];
+            if (isset($bk['share']) && is_array($bk['share'])) {
+                $sh = is_array($cur['share'] ?? null) ? $cur['share'] : [];
+                $sh['image'] = (string)($bk['share']['image'] ?? '');
+                $cur['share'] = obj($sh);
+            }
+            break;
+        case 'pages':
+            foreach (['aboutHeroBg', 'projectsHeroBg'] as $k) if (array_key_exists($k, $bk)) $cur[$k] = $bk[$k];
+            foreach (($bk['pageSections'] ?? []) as $page => $secs) {
+                if (!is_array($secs)) continue;
+                foreach ($secs as $k => $x) {
+                    if (!is_array($x) || !isset($cur['pageSections'][$page][$k]) || !is_array($cur['pageSections'][$page][$k])) continue;
+                    foreach (['bgImage', 'bgMode', 'image', 'imageMode'] as $f) if (array_key_exists($f, $x)) $cur['pageSections'][$page][$k][$f] = $x[$f];
+                }
+            }
+            break;
+        case 'showcase':
+            foreach (['licenses', 'awards', 'partners'] as $k) if (array_key_exists($k, $bk)) $cur[$k] = $bk[$k];
+            break;
+    }
 }

@@ -706,6 +706,12 @@
       document.getElementById('refreshAuditBtn').addEventListener('click', loadAudit);
 
       document.getElementById('refreshBackupsBtn').addEventListener('click', loadBackups);
+      // النسخة المخصصة: إظهار قائمة الأجزاء عند اختيارها
+      const devParts = document.getElementById('devBkParts');
+      document.querySelectorAll('input[name="backupType"]').forEach(r => r.addEventListener('change', () => {
+        devParts.hidden = (document.querySelector('input[name="backupType"]:checked') || {}).value !== 'custom';
+      }));
+      devParts.querySelectorAll('input').forEach(c => c.addEventListener('change', () => c.closest('.bk-part').classList.toggle('is-checked', c.checked)));
       document.getElementById('createBackupBtn').addEventListener('click', async (e) => {
         const btn = e.currentTarget;
         btn.disabled = true;
@@ -713,8 +719,14 @@
         const msg = document.getElementById('createBackupMessage');
         msg.textContent = '';
         const type = (document.querySelector('input[name="backupType"]:checked') || {}).value || 'data';
+        const parts = [...document.querySelectorAll('#devBkParts input:checked')].map(c => c.value);
+        if (type === 'custom' && !parts.length) {
+          msg.textContent = 'اختر جزءاً واحداً على الأقل من القائمة.';
+          btn.disabled = false; btn.textContent = 'إنشاء النسخة الآن';
+          return;
+        }
         try {
-          const { backup } = await api('/api/developer/backups', { method: 'POST', body: JSON.stringify({ type }) });
+          const { backup } = await api('/api/developer/backups', { method: 'POST', body: JSON.stringify(type === 'custom' ? { type, parts } : { type }) });
           msg.textContent = `تم إنشاء النسخة والتحقق من سلامتها: ${backup.files} ملف — ${fmtBytes(backup.size)}.`;
           showToast('تم إنشاء النسخة الاحتياطية والتحقق من سلامتها بنجاح.');
           loadBackups();

@@ -124,7 +124,16 @@
         <label class="backup-type"><input type="radio" name="backupType" value="full"><strong>نسخة كاملة</strong><span>البيانات + الصور والملفات المرفوعة معاً.</span></label>
         <label class="backup-type"><input type="radio" name="backupType" value="works"><strong>الأعمال فقط</strong><span>كل المشاريع (works.json) مع صورها، دون الحسابات أو الرسائل.</span></label>
         <label class="backup-type"><input type="radio" name="backupType" value="settings"><strong>إعدادات الموقع فقط</strong><span>الهوية والأقسام والبنرات ووسائل التواصل مع صورها.</span></label>
+        <label class="backup-type"><input type="radio" name="backupType" value="custom"><strong>نسخة مخصصة ✓</strong><span>اختر بنفسك: الأعمال، البنرات، صور الصفحات، الشعار، الشهادات أو الإعدادات.</span></label>
         <label class="backup-type"><input type="radio" name="backupType" value="site"><strong>تصدير الموقع لاستضافة أخرى</strong><span>الكود كاملاً + البيانات + الملفات + دليل نقل.</span></label>
+      </div>
+      <div class="bk-parts" id="devBkParts" hidden>
+        <label class="bk-part"><input type="checkbox" value="works"><span class="bk-icon" aria-hidden="true">🏗️</span><span class="bk-part-text"><strong>الأعمال</strong><small>كل المشاريع وصورها</small></span></label>
+        <label class="bk-part"><input type="checkbox" value="banners"><span class="bk-icon" aria-hidden="true">🖼️</span><span class="bk-part-text"><strong>البنرات</strong><small>الرئيسية والإضافية في كل الصفحات</small></span></label>
+        <label class="bk-part"><input type="checkbox" value="pages"><span class="bk-icon" aria-hidden="true">🏞️</span><span class="bk-part-text"><strong>صور الصفحات والأقسام</strong><small>الهيرو ورؤوس الصفحات وصور الأقسام</small></span></label>
+        <label class="bk-part"><input type="checkbox" value="identity"><span class="bk-icon" aria-hidden="true">✨</span><span class="bk-part-text"><strong>الشعار والهوية</strong><small>الشعار والأيقونة وصورة المشاركة</small></span></label>
+        <label class="bk-part"><input type="checkbox" value="showcase"><span class="bk-icon" aria-hidden="true">🏅</span><span class="bk-part-text"><strong>الشهادات والتكريم والشركاء</strong><small>عناصرها وصورها</small></span></label>
+        <label class="bk-part"><input type="checkbox" value="settings"><span class="bk-icon" aria-hidden="true">⚙️</span><span class="bk-part-text"><strong>إعدادات الموقع كاملة</strong><small>النصوص والألوان والأقسام ووسائل التواصل</small></span></label>
       </div>
       <button id="createBackupBtn" class="btn btn-dark">إنشاء النسخة الآن</button>
       <p id="createBackupMessage" class="form-note"></p>

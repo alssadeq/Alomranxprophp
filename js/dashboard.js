@@ -2507,10 +2507,10 @@
           if (!list.length) { listBox.innerHTML = '<p class="muted">لا توجد نسخ محفوظة بعد. أنشئ أول نسخة من الأعلى.</p>'; return; }
           listBox.innerHTML = list.map(b => `
             <div class="bk-item" data-name="${escapeHtml(b.name)}">
-              <span class="bk-item-icon" aria-hidden="true">${b.type === 'works' ? '🏗️' : '🎨'}</span>
+              <span class="bk-item-icon" aria-hidden="true">${b.type === 'works' ? '🏗️' : b.type === 'settings' ? '⚙️' : '🗂️'}</span>
               <div class="bk-item-info">
                 <strong>${escapeHtml(b.typeLabel)}</strong>
-                <small>${escapeHtml(fmtDate(b.createdAt))} · ${fmtSize(b.size)}</small>
+                <small>${b.auto ? '<span class="bk-auto">تلقائية قبل الاستعادة</span> ' : ''}${escapeHtml(fmtDate(b.createdAt))} · ${fmtSize(b.size)}</small>
               </div>
               <div class="bk-item-actions">
                 <a class="btn btn-outline btn-sm" href="/api/backups/${encodeURIComponent(b.name)}/download" download>تنزيل</a>
@@ -2521,18 +2521,38 @@
         } catch (err) { listBox.innerHTML = `<p class="muted">${escapeHtml(err.message)}</p>`; }
       }
       const restoreDone = (r) => `تمت الاستعادة: ${r.files} ملف بيانات و${r.images} صورة.` + (r.safetyBackup ? ' حُفظت نسخة من الوضع السابق في القائمة.' : '');
-      document.querySelectorAll('.bk-create').forEach(btn => btn.addEventListener('click', async () => {
+      const partBoxes = [...document.querySelectorAll('#bkParts input[type="checkbox"]')];
+      const createBtn = document.getElementById('bkCreateBtn');
+      const allBtn = document.getElementById('bkSelectAll');
+      const syncParts = () => {
+        const n = partBoxes.filter(c => c.checked).length;
+        createBtn.disabled = n === 0;
+        createBtn.textContent = n ? `إنشاء النسخة الاحتياطية (${n})` : 'إنشاء النسخة الاحتياطية';
+        allBtn.textContent = n === partBoxes.length ? 'إلغاء التحديد' : 'تحديد الكل';
+        partBoxes.forEach(c => c.closest('.bk-part').classList.toggle('is-checked', c.checked));
+      };
+      partBoxes.forEach(c => c.addEventListener('change', syncParts));
+      allBtn.addEventListener('click', () => {
+        const all = partBoxes.every(c => c.checked);
+        partBoxes.forEach(c => { c.checked = !all; });
+        syncParts();
+      });
+      createBtn.addEventListener('click', async () => {
         const msg = document.getElementById('bkCreateMessage');
-        document.querySelectorAll('.bk-create').forEach(b => b.disabled = true);
+        const parts = partBoxes.filter(c => c.checked).map(c => c.value);
+        if (!parts.length) { msg.textContent = 'اختر جزءاً واحداً على الأقل.'; return; }
+        createBtn.disabled = true;
         msg.textContent = 'جارِ إنشاء النسخة...';
         try {
-          const r = await api('/api/backups', { method: 'POST', body: JSON.stringify({ type: btn.dataset.type }) });
+          const r = await api('/api/backups', { method: 'POST', body: JSON.stringify({ type: 'custom', parts }) });
           msg.textContent = `تم إنشاء النسخة (${r.backup.files} ملف). يمكنك تنزيلها من القائمة.`;
           showToast('تم إنشاء النسخة الاحتياطية.');
+          partBoxes.forEach(c => { c.checked = false; });
           load();
         } catch (err) { msg.textContent = 'تعذر إنشاء النسخة: ' + err.message; }
-        finally { document.querySelectorAll('.bk-create').forEach(b => b.disabled = false); }
-      }));
+        finally { syncParts(); }
+      });
+      syncParts();
       listBox.addEventListener('click', async (e) => {
         const item = e.target.closest('.bk-item');
         if (!item) return;
