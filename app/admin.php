@@ -1037,7 +1037,7 @@ function api_custom_banner_create(string $page): void {
         $pos = $after === 'top' ? 0 : (($i = array_search($after, $keys, true)) !== false ? $i + 1 : count($keys));
         array_splice($keys, $pos, 0, [$id]);
         $banner = custom_banner_fields(['id' => $id, 'title' => ['ar' => '', 'en' => ''], 'subtitle' => ['ar' => '', 'en' => ''], 'buttonText' => ['ar' => '', 'en' => ''],
-            'link' => '', 'image' => '', 'imageMobile' => '', 'visible' => true, 'overlay' => true, 'height' => 'md', 'order' => 0, 'createdAt' => now_iso()], $b);
+            'link' => '', 'image' => '', 'imageMobile' => '', 'visible' => true, 'overlay' => false, 'height' => 'auto', 'style' => 2, 'order' => 0, 'createdAt' => now_iso()], $b);
         $s['customBanners'][$page][] = $banner;
         foreach ($keys as $i => $k) {
             if (in_array($k, PAGE_SECTION_KEYS[$page], true)) { $s['pageSections'][$page][$k]['order'] = $i; continue; }

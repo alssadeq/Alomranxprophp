@@ -5,7 +5,8 @@
 (function () {
   // أقصى عرض × ارتفاع لكل استخدام، وجودة الحفظ
   const PRESETS = {
-    background: { w: 1920, h: 1280, q: 0.8 },  // خلفيات الأقسام ورؤوس الصفحات والبانرات
+    background: { w: 1920, h: 1280, q: 0.8 },  // خلفيات الأقسام ورؤوس الصفحات
+    banner: { w: 2560, h: 2560, q: 0.92, keep: 1.5 * 1024 * 1024 }, // البنرات: جودة عالية، والصورة حتى 1.5MB تُرفع كما هي
     section: { w: 1400, h: 1400, q: 0.82 },    // صورة القسم (مربع الصورة)
     work: { w: 1600, h: 1200, q: 0.82 },       // صور المشاريع
     logo: { w: 640, h: 640, q: 0.9, alpha: true },
@@ -44,7 +45,7 @@
     const w = Math.max(1, Math.round(img.naturalWidth * scale));
     const h = Math.max(1, Math.round(img.naturalHeight * scale));
     // صورة صغيرة الحجم وضمن الأبعاد: لا داعي لإعادة ترميزها
-    if (scale === 1 && file.size < 150 * 1024) return file;
+    if (scale === 1 && file.size < (p.keep || 150 * 1024)) return file;
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');

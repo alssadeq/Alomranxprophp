@@ -1225,7 +1225,7 @@
           fd.append('titleEn', card.querySelector('.bn-en').value.trim());
           fd.append('link', card.querySelector('.bn-link').value.trim());
           const file = card.querySelector('.bn-file').files[0];
-          if (file) { const img = await compressImage(file, 'background'); fd.append('image', img, img.name); }
+          if (file) { const img = await compressImage(file, 'banner'); fd.append('image', img, img.name); }
           try {
             await api(`/api/settings/banner/${i + 1}`, { method: 'PUT', body: fd });
             showToast(`تم حفظ البانر ${i + 1}.`);
@@ -2297,7 +2297,7 @@
     }
 
     /* ---------- البنرات المضافة داخل أقسام الصفحة ---------- */
-    const CB_HEIGHTS = { sm: 'صغير', md: 'متوسط', lg: 'كبير' };
+    const CB_HEIGHTS = { auto: 'بحجم الصورة الأصلي (بدون قص)', sm: 'صغير', md: 'متوسط', lg: 'كبير' };
 
     function customBannerToolbarTemplate(items) {
       const opts = items.map(it => `<option value="${escapeHtml(it.key)}">بعد: ${escapeHtml(it.type === 'section' ? it.cfg.label : ('بنر — ' + (biAr(it.banner.title) || 'بدون عنوان')))}</option>`).join('');
@@ -2376,7 +2376,7 @@
               </div>
               <div class="form-field">
                 <label>&nbsp;</label>
-                <label class="perm-check"><input type="checkbox" class="cb-overlay"> تظليل الصورة لوضوح النص</label>
+                <label class="perm-check"><input type="checkbox" class="cb-overlay"> تظليل الصورة لوضوح النص (يُغمّق الصورة)</label>
               </div>
             </div>
             <div class="cb-actions">
@@ -2398,8 +2398,8 @@
       const fill = (cls, v) => { setVal(card, `.${cls}-ar`, biAr(v)); setVal(card, `.${cls}-en`, biEn(v)); };
       fill('cb-title', b.title); fill('cb-subtitle', b.subtitle); fill('cb-btn', b.buttonText);
       setVal(card, '.cb-link', b.link || '');
-      card.querySelector('.cb-height').value = b.height || 'md';
-      card.querySelector('.cb-overlay').checked = b.overlay !== false;
+      card.querySelector('.cb-height').value = b.height || 'auto';
+      card.querySelector('.cb-overlay').checked = b.overlay === true;
 
       const visibleCb = card.querySelector('.sec-visible-cb');
       visibleCb.checked = b.visible !== false;
@@ -2447,7 +2447,7 @@
             const file = slot.querySelector('.cb-image-file').files[0];
             if (!file) continue;
             const fd = new FormData();
-            const img = await compressImage(file, slot.dataset.kind === 'mobile' ? 'section' : 'background');
+            const img = await compressImage(file, 'banner');
             fd.append('image', img, img.name);
             r = await api(`${base}/image${slot.dataset.kind === 'mobile' ? '?kind=mobile' : ''}`, { method: 'PUT', body: fd });
             Object.assign(b, r.banner);

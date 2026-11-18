@@ -199,7 +199,7 @@ const PAGE_SECTION_KEYS = [
     'methodology' => ['pageHero', 'phases', 'quality', 'faq', 'cta'],
     'privacy' => ['pageHero', 'content'],
 ];
-const CUSTOM_BANNER_HEIGHTS = ['sm', 'md', 'lg'];
+const CUSTOM_BANNER_HEIGHTS = ['auto', 'sm', 'md', 'lg'];
 
 function default_section_config($order): array {
     return [
@@ -314,7 +314,13 @@ function get_settings(): array {
     $s['customBanners'] = [];
     foreach (array_keys(PAGE_SECTION_KEYS) as $page) {
         $list = [];
-        foreach ((is_list($cb[$page] ?? null) ? $cb[$page] : []) as $b) if (is_array($b) && !empty($b['id'])) $list[] = $b;
+        foreach ((is_list($cb[$page] ?? null) ? $cb[$page] : []) as $b) {
+            if (!is_array($b) || empty($b['id'])) continue;
+            // من الإصدار 2.6.2: البنر يظهر بصورته الأصلية (بدون تظليل ولا قص). البنرات الأقدم تُحوَّل مرة واحدة،
+            // ويبقى بإمكان المسؤول تفعيل التظليل أو اختيار ارتفاع ثابت من لوحة التحكم.
+            if (!isset($b['style'])) { $b['overlay'] = false; $b['height'] = 'auto'; $b['style'] = 2; }
+            $list[] = $b;
+        }
         $s['customBanners'][$page] = $list;
     }
     $s['content'] = fill_content_defaults($s['content'] ?? null);

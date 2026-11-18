@@ -1337,3 +1337,15 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
   #pg-about-story .about-grid{ grid-template-columns: .88fr 1.12fr; gap:48px; }
   #pg-about-story .about-media img{ height:500px; }
 }
+
+/* البنر المضاف بحجم صورته الأصلية: الصورة كاملة بنسبتها دون قص، والنص (إن وُجد) فوقها */
+.custom-banner.cb-h-auto{ background:transparent; }
+.custom-banner.cb-h-auto .cb-inner{ display:block; min-height:0; }
+.custom-banner.cb-h-auto picture{ position:relative; display:block; inset:auto; width:100%; height:auto; }
+.custom-banner.cb-h-auto picture img{ position:static; width:100%; height:auto; object-fit:initial; }
+.custom-banner.cb-h-auto .cb-text{ position:absolute; top:0; bottom:0; left:0; right:0; margin:auto; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding-top:24px; padding-bottom:24px; }
+.custom-banner.cb-h-auto .cb-link:hover picture img{ transform:none; }
+@media (max-width: 760px){
+  .custom-banner.cb-h-auto .cb-text h2{ font-size:clamp(18px, 5vw, 26px); margin-bottom:6px; }
+  .custom-banner.cb-h-auto .cb-text p{ font-size:13px; line-height:1.7; margin-bottom:10px; }
+}

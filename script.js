@@ -886,7 +886,9 @@ function renderCustomBanners(list) {
       parent.appendChild(el);
     }
     const hasImage = !!(b.image || b.imageMobile);
-    el.className = `custom-banner cb-h-${['sm', 'md', 'lg'].includes(b.height) ? b.height : 'md'}${b.overlay === false ? ' cb-no-overlay' : ''}${hasImage ? '' : ' cb-no-image'}`;
+    // البنر بصورته الأصلية افتراضياً: بدون قص (auto) وبدون تظليل إلا إن فعّله المسؤول
+    const h = ['auto', 'sm', 'md', 'lg'].includes(b.height) ? b.height : 'auto';
+    el.className = `custom-banner cb-h-${hasImage ? h : (h === 'auto' ? 'md' : h)}${b.overlay === true ? '' : ' cb-no-overlay'}${hasImage ? '' : ' cb-no-image'}`;
     el.style.display = b.visible === false ? 'none' : '';
     const title = pick(b.title), sub = pick(b.subtitle), btn = pick(b.buttonText);
     const link = safeBannerUrl(b.link);
