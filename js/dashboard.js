@@ -1152,6 +1152,45 @@
       const box = document.getElementById(elementId);
       if (!box) return;
       box.innerHTML = src ? `<img src="${src}" alt="">` : 'لا يوجد ملف مرفوع بعد';
+      document.querySelectorAll(`.img-del-btn[data-preview="${elementId}"]`).forEach(b => { b.hidden = !src; });
+    }
+
+    // زر «حذف الصورة» بجانب كل زر رفع في الهوية والمظهر؛ يظهر فقط عند وجود صورة مرفوعة
+    function setupImageDeleteButtons() {
+      const items = [
+        { preview: 'logoPreview', button: '[data-upload="logo"]', endpoint: '/api/settings/logo', msg: 'identityMessage', name: 'الشعار' },
+        { preview: 'faviconPreview', button: '[data-upload="favicon"]', endpoint: '/api/settings/favicon', msg: 'identityMessage', name: 'أيقونة العنوان' },
+        { preview: 'aboutBgPreview', button: '[data-upload="about"]', endpoint: '/api/settings/background/about', msg: 'bgMessage', name: 'خلفية رأس صفحة "من نحن"' },
+        { preview: 'projectsBgPreview', button: '[data-upload="projects"]', endpoint: '/api/settings/background/projects', msg: 'projectsBgMessage', name: 'خلفية رأس صفحة "مشاريعنا"' },
+        { preview: 'projectLogoPreview', button: '#projectLogoUploadBtn', endpoint: '/api/settings/project-logo', msg: 'projectLogoMessage', name: 'شعار بطاقات المشاريع' },
+        { preview: 'bannerLogoPreview', button: '#bannerLogoUploadBtn', endpoint: '/api/settings/banner-logo', msg: 'bannerLogoMessage', name: 'شعار البانر الرئيسي' },
+      ];
+      items.forEach(it => {
+        const up = document.querySelector(it.button);
+        if (!up || document.querySelector(`.img-del-btn[data-preview="${it.preview}"]`)) return;
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'btn btn-sm img-del-btn';
+        del.dataset.preview = it.preview;
+        del.textContent = '🗑 حذف الصورة';
+        const pv = document.getElementById(it.preview);
+        del.hidden = !(pv && pv.querySelector('img'));
+        up.insertAdjacentElement('afterend', del);
+        del.addEventListener('click', async () => {
+          if (!confirm(`حذف ${it.name}؟ ستُحذف الصورة من الموقع نهائياً.`)) return;
+          const box = document.getElementById(it.msg);
+          del.disabled = true;
+          try {
+            await api(it.endpoint, { method: 'DELETE' });
+            renderIdentityPreview(it.preview, '');
+            if (box) box.textContent = `تم حذف ${it.name}.`;
+            showToast('تم حذف الصورة.');
+            loadIdentity();
+          } catch (err) {
+            if (box) box.textContent = 'تعذر الحذف: ' + err.message;
+          } finally { del.disabled = false; }
+        });
+      });
     }
 
     function renderBanners(banners) {
@@ -2147,6 +2186,7 @@
           <button type="button" data-mode="url">رابط صورة</button>
         </div>
         <div class="sec-image-upload-panel">
+          <div class="sec-current-img" data-kind="image" hidden><img alt="الصورة الحالية"><button type="button" class="btn btn-sm img-del-btn sec-img-del">🗑 حذف الصورة</button></div>
           <input type="file" class="sec-image-file" accept="image/png,image/jpeg,image/webp">
           <p class="size-hint">📐 ${['hero', 'about'].includes(cfg.key) ? 'المقاس المقترح: مربع 1200 × 1200 بكسل — تظهر الصورة كاملة بدون قص على الجوال' : 'المقاس المقترح: 1400 × 1000 بكسل'}</p>
         </div>
@@ -2183,6 +2223,7 @@
               </div>
             </div>
             <div class="sec-bg-image-panel" style="display:none;">
+              <div class="sec-current-img" data-kind="bg" hidden><img alt="صورة الخلفية الحالية"><button type="button" class="btn btn-sm img-del-btn sec-img-del">🗑 حذف الصورة</button></div>
               <input type="file" class="sec-bg-image-file" accept="image/png,image/jpeg,image/webp">
               <p class="size-hint">📐 المقاس المقترح للخلفية: 1920 × 1080 بكسل</p>
             </div>
@@ -2657,6 +2698,37 @@
         setVal(card, '.sec-image-url', s.imageMode === 'url' ? (s.image || '') : '');
       }
 
+      // الصورة الحالية (خلفية القسم وصورته) مع زر حذف
+      const setCurImg = (kind, url) => {
+        const box = card.querySelector(`.sec-current-img[data-kind="${kind}"]`);
+        if (!box) return;
+        box.hidden = !url;
+        box.querySelector('img').src = url || '';
+      };
+      setCurImg('bg', s.bgImage || '');
+      if (cfg.hasImage) setCurImg('image', s.imageMode === 'url' ? '' : (s.image || ''));
+      card._setCurImg = setCurImg;
+      card.querySelectorAll('.sec-current-img .sec-img-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const kind = btn.closest('.sec-current-img').dataset.kind;
+          if (!confirm(kind === 'bg' ? 'حذف صورة خلفية هذا القسم؟ سيعود القسم إلى لون الخلفية.' : 'حذف صورة هذا القسم؟ ستظهر الصورة الافتراضية للتصميم.')) return;
+          const msgBox = card.querySelector('.sec-save-msg');
+          btn.disabled = true;
+          try {
+            await api(`/api/settings/sections/${currentSectionsPage}/${cfg.key}/${kind === 'bg' ? 'bg-image' : 'image'}`, { method: 'DELETE' });
+            setCurImg(kind, '');
+            if (kind === 'bg') {
+              setActiveMode(card, '.sec-bg-mode-toggle', 'color');
+              toggleModePanels(card, 'bg', 'color');
+            }
+            if (msgBox) msgBox.textContent = 'تم حذف الصورة.';
+            showToast('تم حذف الصورة.');
+          } catch (err) {
+            if (msgBox) msgBox.textContent = 'تعذر الحذف: ' + err.message;
+          } finally { btn.disabled = false; }
+        });
+      });
+
       // مزامنة منتقي اللون المرئي مع الحقل النصي
       ['bg-color', 'box-color', 'text-color'].forEach(field => {
         const picker = card.querySelector(`.sec-${field}-picker`);
@@ -2738,7 +2810,9 @@
         if (bgMode === 'image' && bgFile && bgFile.files[0]) {
           const fd = new FormData();
           const bgImg = await compressImage(bgFile.files[0], 'background'); fd.append('image', bgImg, bgImg.name);
-          await api(`/api/settings/sections/${currentSectionsPage}/${cfg.key}/bg-image`, { method: 'PUT', body: fd });
+          const rb = await api(`/api/settings/sections/${currentSectionsPage}/${cfg.key}/bg-image`, { method: 'PUT', body: fd });
+          if (card._setCurImg && rb && rb.bgImage) card._setCurImg('bg', rb.bgImage);
+          bgFile.value = '';
         }
 
         // 3) رفع صورة القسم نفسه إذا اختير وضع "رفع" وتم اختيار ملف
@@ -2748,7 +2822,9 @@
           if (imageMode === 'upload' && imgFile && imgFile.files[0]) {
             const fd2 = new FormData();
             const secImg = await compressImage(imgFile.files[0], 'section'); fd2.append('image', secImg, secImg.name);
-            await api(`/api/settings/sections/${currentSectionsPage}/${cfg.key}/image`, { method: 'PUT', body: fd2 });
+            const ri = await api(`/api/settings/sections/${currentSectionsPage}/${cfg.key}/image`, { method: 'PUT', body: fd2 });
+            if (card._setCurImg && ri && ri.image) card._setCurImg('image', ri.image);
+            imgFile.value = '';
           }
         }
 
@@ -3055,6 +3131,7 @@
         if (!conf) return;
         bindImageUpload({ input: conf.input, button: btn, preset: conf.preset, endpoint: conf.endpoint, msgBox: conf.msgBox, done: 'تم الرفع بنجاح، واستُبدلت الصورة السابقة.' });
       });
+      setupImageDeleteButtons();
     }
 
     // رفع صورة هوية (شعار، أيقونة، خلفية): يبدأ الرفع فور اختيار الملف، ويبقى الزر لإعادة المحاولة.

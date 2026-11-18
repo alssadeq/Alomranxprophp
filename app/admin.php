@@ -297,10 +297,10 @@ function api_banner_put(string $slot): void {
 }
 
 // رفع صورة لحقل في الإعدادات: الشعار، الأيقونة، خلفيات الصفحات
-function settings_image_field(string $field): void {
+function settings_image_field(string $field, bool $delete = false): void {
     require_admin();
-    $url = receive_image();
-    if (!$url) send_json(['error' => 'لم يتم إرفاق صورة.'], 400);
+    $url = $delete ? '' : receive_image();
+    if (!$delete && !$url) send_json(['error' => 'لم يتم إرفاق صورة.'], 400);
     $old = '';
     settings_mutate(function (&$s) use ($field, $url, &$old) {
         $old = str_val($s[$field] ?? '');
@@ -310,11 +310,25 @@ function settings_image_field(string $field): void {
     send_json(['ok' => true, $field => $url]);
 }
 
-function api_settings_background(string $key): void {
+function api_settings_background(string $key, bool $delete = false): void {
     $map = ['about' => 'aboutHeroBg', 'projects' => 'projectsHeroBg'];
     require_admin();
     if (!isset($map[$key])) send_json(['error' => 'مفتاح الخلفية غير صحيح.'], 400);
-    settings_image_field($map[$key]);
+    settings_image_field($map[$key], $delete);
+}
+
+/* حذف صورة شعار بطاقات المشاريع أو شعار البانر (يبقى إعداد الإظهار كما هو) */
+function api_settings_logo_image_delete(string $key): void {
+    require_admin();
+    $old = '';
+    $s = settings_mutate(function (&$s) use ($key, &$old) {
+        $cur = is_array($s[$key] ?? null) ? $s[$key] : [];
+        $old = str_val($cur['image'] ?? '');
+        $cur['image'] = '';
+        $s[$key] = obj($cur);
+    });
+    drop_replaced_images([$old]);
+    send_json(['ok' => true, $key => $s[$key]]);
 }
 
 function api_settings_share(): void {
@@ -656,16 +670,24 @@ function api_sections_put(string $page): void {
     send_json(['ok' => true, 'sections' => $s['pageSections'][$page]]);
 }
 
-function api_sections_image(string $page, string $key, bool $bg): void {
+function api_sections_image(string $page, string $key, bool $bg, bool $delete = false): void {
     require_admin();
     if (!isset(PAGE_SECTION_KEYS[$page]) || !in_array($key, PAGE_SECTION_KEYS[$page], true)) send_json(['error' => 'قسم غير معروف.'], 400);
-    $url = receive_image();
-    if (!$url) send_json(['error' => 'لم يتم إرفاق صورة.'], 400);
+    $url = $delete ? '' : receive_image();
+    if (!$delete && !$url) send_json(['error' => 'لم يتم إرفاق صورة.'], 400);
     $old = '';
-    settings_mutate(function (&$s) use ($page, $key, $url, $bg, &$old) {
+    settings_mutate(function (&$s) use ($page, $key, $url, $bg, $delete, &$old) {
         $x = &$s['pageSections'][$page][$key];
-        if ($bg) { $old = str_val($x['bgImage'] ?? ''); $x['bgImage'] = $url; $x['bgMode'] = 'image'; }
-        else { $old = str_val($x['image'] ?? ''); $x['image'] = $url; $x['imageMode'] = 'upload'; }
+        if ($bg) {
+            $old = str_val($x['bgImage'] ?? '');
+            $x['bgImage'] = $url;
+            // بعد حذف صورة الخلفية يعود القسم إلى لون الخلفية
+            $x['bgMode'] = $delete ? 'color' : 'image';
+        } else {
+            $old = str_val($x['image'] ?? '');
+            $x['image'] = $url;
+            $x['imageMode'] = 'upload';
+        }
     });
     drop_replaced_images([$old]);
     send_json(['ok' => true, $bg ? 'bgImage' : 'image' => $url]);
