@@ -199,6 +199,26 @@
           <div class="bi-row"><span class="bi-badge">AR</span><textarea id="w-description-ar" rows="3" placeholder="وصف أطول للمشروع يظهر مع الاسم عند فتح صوره بشكل استديو"></textarea></div>
           <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="w-description-en" rows="3" placeholder="Longer project description shown in the studio image viewer"></textarea></div>
         </div>
+        <fieldset class="pc-fieldset">
+          <legend>🗂️ بطاقة المشروع (تظهر أعلى صور المشروع عند فتحه)</legend>
+          <label class="perm-check"><input type="checkbox" id="w-showCard" checked> إظهار بطاقة المشروع</label>
+          <div class="bi-field">
+            <label>المالك</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-owner-ar" placeholder="مثال: شركة بناء المتحدة" ></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-owner-en" placeholder="e.g. United Construction Co." ></div>
+          </div>
+          <div class="bi-field">
+            <label>نوع المشروع</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-projectType-ar" placeholder="مثال: مستودعات (لوجستي / تخزين) — إن تُرك فارغاً يظهر التصنيف" ></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-projectType-en" placeholder="e.g. Warehouses (Logistics / Storage)" ></div>
+          </div>
+          <div class="bi-field">
+            <label>جهة التنفيذ (اختياري)</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="w-executedBy-ar" placeholder="إن تُرك فارغاً: شركة العمران الذهبية للمقاولات العامة" ></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="w-executedBy-en" placeholder="Default: Al-Omran Al-Dhahabia General Contracting Company" ></div>
+          </div>
+          <p class="form-note">اسم المشروع ومساحته ووصفه تؤخذ من الحقول أعلاه.</p>
+        </fieldset>
         <div class="form-field" style="margin-top:6px;">
           <label for="w-images">صور المشروع (اختياري، بدون حد أقصى لعددها)</label>
           <input type="file" id="w-images" accept="image/png,image/jpeg,image/webp" multiple>

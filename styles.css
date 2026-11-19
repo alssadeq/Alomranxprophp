@@ -1349,3 +1349,117 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
   .custom-banner.cb-h-auto .cb-text h2{ font-size:clamp(18px, 5vw, 26px); margin-bottom:6px; }
   .custom-banner.cb-h-auto .cb-text p{ font-size:13px; line-height:1.7; margin-bottom:10px; }
 }
+
+/* =========================================================
+   بطاقة المشروع في صفحة التفاصيل (ألوان الهوية: كحلي + رملي)
+   ========================================================= */
+.pd-card-section{ padding:28px 0 8px; background:linear-gradient(180deg, var(--sand-bg) 0%, var(--bg) 100%); }
+.pd-card-breadcrumb{ margin-bottom:14px; font-size:13px; }
+.pd-card-breadcrumb a, .pd-card-breadcrumb span{ color:var(--muted); }
+.pd-card{
+  background:var(--paper); border-radius:24px; overflow:hidden;
+  border:1px solid var(--line); box-shadow:0 18px 50px rgba(30,42,50,.10);
+}
+.pd-ico svg, .pd-type-ico svg, .pd-sketch{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.pd-ico{ display:inline-flex; width:22px; height:22px; flex-shrink:0; }
+.pd-ico svg{ width:100%; height:100%; }
+
+/* الرأس: النص يميناً والصورة يساراً بقطع مائل */
+.pd-card-hero{ display:grid; grid-template-columns:1fr 1.15fr; min-height:340px; background:linear-gradient(135deg, #fff 0%, #f7f4ee 100%); }
+.pd-card-hero.no-photo{ grid-template-columns:1fr; min-height:0; }
+.pd-card-headtext{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:84px 28px 30px; }
+.pd-ribbon{
+  position:absolute; top:0; right:0; display:flex; align-items:center; gap:10px;
+  background:var(--navy); color:#fff; padding:12px 22px 12px 40px;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 28px 100%); border-bottom-left-radius:4px;
+}
+.pd-ribbon::after{ content:""; position:absolute; left:0; top:0; bottom:0; width:12px; background:var(--sand); clip-path:polygon(0 0, 100% 0, 30% 100%, 0 100%); transform:translateX(-2px) skewX(-18deg); }
+.pd-ribbon .pd-ico{ width:30px; height:30px; color:var(--sand); }
+.pd-ribbon b{ display:block; font-size:16px; line-height:1.2; }
+.pd-ribbon small{ display:block; font-size:12px; opacity:.8; }
+.pd-type-ico{ width:62px; height:62px; color:var(--sand-strong); margin-bottom:10px; }
+.pd-type-ico svg{ width:100%; height:100%; stroke-width:1.4; }
+.pd-title{ margin:0; color:var(--navy); font-size:clamp(26px, 3.6vw, 40px); line-height:1.3; font-weight:800; }
+.pd-title-sub{ margin:8px 0 0; color:var(--muted); font-size:clamp(14px, 1.6vw, 18px); letter-spacing:.5px; }
+.pd-rule{ display:block; width:min(260px, 70%); height:3px; margin-top:16px; border-radius:3px; background:linear-gradient(90deg, transparent, var(--sand) 20%, var(--sand) 80%, transparent); }
+.pd-card-photo{ position:relative; overflow:hidden; clip-path:polygon(14% 0, 100% 0, 100% 100%, 0 100%); }
+.pd-card-photo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.pd-card-photo::before{ content:""; position:absolute; inset:0 auto 0 0; width:16%; z-index:1; background:linear-gradient(90deg, rgba(255,255,255,.55), transparent); pointer-events:none; }
+
+/* صندوق المعلومات: 4 خانات بفواصل */
+.pd-facts{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+  margin:-28px 28px 0; position:relative; z-index:2;
+  background:linear-gradient(180deg, #fff, #faf8f4); border:1px solid var(--line); border-radius:18px;
+  box-shadow:0 10px 26px rgba(30,42,50,.08);
+}
+.pd-fact{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; padding:18px 14px; }
+.pd-fact + .pd-fact{ border-inline-start:1px solid var(--line); }
+.pd-fact .pd-ico{ width:34px; height:34px; color:var(--navy); margin-bottom:2px; }
+.pd-fact-label{ font-size:14px; font-weight:700; color:var(--navy); }
+.pd-fact-value{ font-size:16px; font-weight:800; color:var(--text); line-height:1.6; }
+
+/* وصف المشروع */
+.pd-desc{ margin:26px 28px 0; border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; }
+.pd-tab{
+  display:inline-flex; align-items:center; gap:10px; margin:0; padding:10px 22px 10px 34px;
+  background:var(--navy); color:#fff; font-size:17px; font-weight:800;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 22px 100%); border-bottom-left-radius:4px;
+}
+.pd-tab .pd-ico{ color:var(--sand); }
+.pd-desc-body{ display:flex; align-items:flex-end; gap:20px; padding:16px 24px 18px; }
+.pd-desc-body p{ flex:1; margin:0; font-size:16px; line-height:2; color:var(--text); }
+.pd-sketch{ width:200px; flex-shrink:0; color:#c9cdd3; stroke-width:1.2; }
+
+/* جهة التنفيذ */
+.pd-exec{
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:18px;
+  margin:20px 28px 0; padding:16px 20px; border:1px solid var(--line); border-radius:18px;
+  background:linear-gradient(90deg, #fff, #faf8f4);
+}
+.pd-exec-badge{
+  background:linear-gradient(135deg, #d9c9a6, var(--sand) 55%, var(--sand-strong)); color:var(--navy);
+  font-weight:800; font-size:19px; padding:10px 26px 10px 32px;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 16px 100%); border-radius:4px;
+}
+.pd-exec-name{ text-align:center; }
+.pd-exec-name strong{ display:block; color:var(--navy); font-size:clamp(16px, 2vw, 20px); }
+.pd-exec-name small{ display:block; color:var(--muted); font-size:13.5px; margin-top:3px; }
+.pd-exec-logo{ height:64px; width:auto; max-width:180px; object-fit:contain; }
+
+/* عنوان صور المشروع: الصور تظهر تحته مباشرة */
+.pd-photos-title{ display:flex; align-items:center; gap:12px; padding:24px 28px 22px; }
+.pd-photos-title .pd-ico{ width:30px; height:30px; color:var(--navy); }
+.pd-photos-title h2{ margin:0; font-size:20px; color:var(--navy); white-space:nowrap; }
+.pd-photos-line{ flex:1; height:2px; background:linear-gradient(90deg, transparent, var(--sand)); border-radius:2px; }
+.pd-gallery-section.is-after-card{ padding-top:22px !important; }
+
+@media (max-width: 760px){
+  .pd-card-section{ padding:18px 0 4px; }
+  .pd-card{ border-radius:18px; }
+  .pd-card-hero{ grid-template-columns:1fr; }
+  .pd-card-photo{ order:-1; height:220px; clip-path:none; }
+  .pd-card-photo::before{ display:none; }
+  .pd-card-headtext{ padding:62px 16px 40px; }
+  .pd-ribbon{ padding:9px 16px 9px 32px; }
+  .pd-ribbon .pd-ico{ width:24px; height:24px; }
+  .pd-type-ico{ width:48px; height:48px; }
+  .pd-facts{ grid-template-columns:1fr 1fr; margin:-24px 12px 0; }
+  .pd-fact{ padding:14px 8px; }
+  .pd-fact + .pd-fact{ border-inline-start:0; }
+  .pd-fact:nth-child(even){ border-inline-start:1px solid var(--line); }
+  .pd-fact:nth-child(n+3){ border-top:1px solid var(--line); }
+  .pd-fact .pd-ico{ width:28px; height:28px; }
+  .pd-fact-label{ font-size:13px; }
+  .pd-fact-value{ font-size:14.5px; }
+  .pd-desc, .pd-exec{ margin-left:12px; margin-right:12px; }
+  .pd-desc-body{ padding:14px 16px; }
+  .pd-desc-body p{ font-size:15px; }
+  .pd-sketch{ display:none; }
+  .pd-exec{ grid-template-columns:1fr auto; gap:10px 12px; padding:14px; }
+  .pd-exec-badge{ grid-column:1 / -1; justify-self:start; font-size:16px; padding:7px 20px 7px 26px; }
+  .pd-exec-name{ text-align:start; }
+  .pd-exec-logo{ height:48px; max-width:120px; }
+  .pd-photos-title{ padding:20px 14px 16px; }
+  .pd-photos-title h2{ font-size:18px; }
+}

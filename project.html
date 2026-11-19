@@ -47,7 +47,7 @@
 
 <main>
   <!-- رأس صفحة تفاصيل المشروع -->
-  <section class="page-hero" data-hero="projects" style="padding:36px 0;">
+  <section class="page-hero" id="pd-hero" data-hero="projects" style="padding:36px 0;">
     <div class="container">
       <div class="breadcrumb">
         <a href="/#home" data-i18n="breadcrumbHome">الرئيسية</a>
@@ -62,15 +62,29 @@
     </div>
   </section>
 
+  <!-- بطاقة المشروع (تُملأ من project.js وتُدار من لوحة التحكم ← الأعمال ← تعديل) -->
+  <section class="pd-card-section" id="pd-card-section" hidden>
+    <div class="container" style="max-width:1000px;">
+      <div class="breadcrumb pd-card-breadcrumb">
+        <a href="/#home" data-i18n="breadcrumbHome">الرئيسية</a>
+        <span>/</span>
+        <a href="/projects" data-i18n="breadcrumbProjects">مشاريعنا</a>
+        <span>/</span>
+        <span id="pd-card-breadcrumb-title"></span>
+      </div>
+      <article class="pd-card" id="pd-card"></article>
+    </div>
+  </section>
+
   <!-- وصف المشروع -->
-  <section class="section" style="padding:40px 0;">
+  <section class="section" id="pd-description-section" style="padding:40px 0;">
     <div class="container" style="max-width:820px;">
       <p id="pd-description" class="muted" style="font-size:16px; line-height:1.9;"></p>
     </div>
   </section>
 
   <!-- كل صور المشروع، مكدّسة عمودياً وتظهر كاملة بدون قص -->
-  <section class="section" style="padding:0 0 40px;">
+  <section class="section pd-gallery-section" style="padding:0 0 40px;">
     <div class="container" style="max-width:900px;">
       <div id="pd-gallery" class="project-detail-gallery">
         <p class="muted" style="text-align:center;">جارِ تحميل الصور...</p>

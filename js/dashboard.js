@@ -564,6 +564,10 @@
           meta: { ar: document.getElementById('w-meta-ar').value.trim(), en: document.getElementById('w-meta-en').value.trim() },
           area: { ar: document.getElementById('w-area-ar').value.trim(), en: document.getElementById('w-area-en').value.trim() },
           description: { ar: document.getElementById('w-description-ar').value.trim(), en: document.getElementById('w-description-en').value.trim() },
+          owner: { ar: document.getElementById('w-owner-ar').value.trim(), en: document.getElementById('w-owner-en').value.trim() },
+          projectType: { ar: document.getElementById('w-projectType-ar').value.trim(), en: document.getElementById('w-projectType-en').value.trim() },
+          executedBy: { ar: document.getElementById('w-executedBy-ar').value.trim(), en: document.getElementById('w-executedBy-en').value.trim() },
+          showCard: document.getElementById('w-showCard').checked,
         };
         const imageFiles = document.getElementById('w-images').files;
 
@@ -690,7 +694,7 @@
     function openEditWork(work) {
       const overlay = el(`
         <div class="modal-overlay">
-          <div class="modal-box" style="max-width:520px;">
+          <div class="modal-box ew-box" style="max-width:560px;">
             <h3>تعديل: ${escapeHtml(biText(work.title))}</h3>
             <div class="bi-field">
               <label>اسم المشروع</label>
@@ -725,6 +729,26 @@
               <div class="bi-row"><span class="bi-badge">AR</span><textarea id="ew-description-ar" rows="3">${escapeHtml(biAr(work.description))}</textarea></div>
               <div class="bi-row"><span class="bi-badge en">EN</span><textarea id="ew-description-en" rows="3">${escapeHtml(biEn(work.description))}</textarea></div>
             </div>
+            <fieldset class="pc-fieldset">
+          <legend>🗂️ بطاقة المشروع (تظهر أعلى صور المشروع عند فتحه)</legend>
+          <label class="perm-check"><input type="checkbox" id="ew-showCard" ${work.showCard !== false ? 'checked' : ''}> إظهار بطاقة المشروع</label>
+          <div class="bi-field">
+            <label>المالك</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="ew-owner-ar" placeholder="مثال: شركة بناء المتحدة" value="${escapeAttr(biAr(work.owner))}"></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="ew-owner-en" placeholder="e.g. United Construction Co." value="${escapeAttr(biEn(work.owner))}"></div>
+          </div>
+          <div class="bi-field">
+            <label>نوع المشروع</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="ew-projectType-ar" placeholder="مثال: مستودعات (لوجستي / تخزين) — إن تُرك فارغاً يظهر التصنيف" value="${escapeAttr(biAr(work.projectType))}"></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="ew-projectType-en" placeholder="e.g. Warehouses (Logistics / Storage)" value="${escapeAttr(biEn(work.projectType))}"></div>
+          </div>
+          <div class="bi-field">
+            <label>جهة التنفيذ (اختياري)</label>
+            <div class="bi-row"><span class="bi-badge">AR</span><input type="text" id="ew-executedBy-ar" placeholder="إن تُرك فارغاً: شركة العمران الذهبية للمقاولات العامة" value="${escapeAttr(biAr(work.executedBy))}"></div>
+            <div class="bi-row"><span class="bi-badge en">EN</span><input type="text" id="ew-executedBy-en" placeholder="Default: Al-Omran Al-Dhahabia General Contracting Company" value="${escapeAttr(biEn(work.executedBy))}"></div>
+          </div>
+          <p class="form-note">اسم المشروع ومساحته ووصفه تؤخذ من الحقول أعلاه.</p>
+            </fieldset>
             <div class="modal-actions">
               <button type="button" class="btn btn-outline" id="ewCancel">إلغاء</button>
               <button type="button" class="btn btn-dark" id="ewSave">حفظ التعديلات</button>
@@ -742,6 +766,10 @@
           meta: { ar: overlay.querySelector('#ew-meta-ar').value.trim(), en: overlay.querySelector('#ew-meta-en').value.trim() },
           area: { ar: overlay.querySelector('#ew-area-ar').value.trim(), en: overlay.querySelector('#ew-area-en').value.trim() },
           description: { ar: overlay.querySelector('#ew-description-ar').value.trim(), en: overlay.querySelector('#ew-description-en').value.trim() },
+          owner: { ar: overlay.querySelector('#ew-owner-ar').value.trim(), en: overlay.querySelector('#ew-owner-en').value.trim() },
+          projectType: { ar: overlay.querySelector('#ew-projectType-ar').value.trim(), en: overlay.querySelector('#ew-projectType-en').value.trim() },
+          executedBy: { ar: overlay.querySelector('#ew-executedBy-ar').value.trim(), en: overlay.querySelector('#ew-executedBy-en').value.trim() },
+          showCard: overlay.querySelector('#ew-showCard').checked,
         };
         try {
           await api(`/api/works/${work.id}`, { method: 'PUT', body: JSON.stringify(payload) });

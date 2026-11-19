@@ -167,6 +167,9 @@ function api_works_create(): void {
         foreach ($works as $w) $max = max($max, $w['order'] ?? 0);
         $new = ['id' => 'w_' . rand_hex(6), 'title' => $title, 'city' => $city, 'category' => $category,
             'meta' => bi($b['meta'] ?? null), 'area' => bi($b['area'] ?? null), 'description' => bi($b['description'] ?? null),
+            // بطاقة المشروع في صفحة التفاصيل
+            'owner' => bi($b['owner'] ?? null), 'projectType' => bi($b['projectType'] ?? null), 'executedBy' => bi($b['executedBy'] ?? null),
+            'showCard' => ($b['showCard'] ?? true) !== false,
             'images' => sanitize_asset_list($b['images'] ?? null), 'visible' => true, 'pinned' => false,
             'order' => $works ? $max + 1 : 1, 'createdAt' => now_iso()];
         $works[] = $new;
@@ -185,7 +188,8 @@ function api_works_update(string $id): void {
     [$work, $old] = works_mutate(function (&$works) use ($id, $b) {
         $i = work_index($works, $id);
         $w = &$works[$i];
-        foreach (['title', 'city', 'meta', 'area', 'description'] as $k) if (body_has($b, $k)) $w[$k] = bi($b[$k], $w[$k] ?? null);
+        foreach (['title', 'city', 'meta', 'area', 'description', 'owner', 'projectType', 'executedBy'] as $k) if (body_has($b, $k)) $w[$k] = bi($b[$k], $w[$k] ?? null);
+        if (body_has($b, 'showCard')) $w['showCard'] = $b['showCard'] !== false;
         if (body_has($b, 'category')) $w['category'] = $b['category'];
         $old = $w['images'] ?? [];
         if (body_has($b, 'images')) {
