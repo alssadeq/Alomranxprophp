@@ -232,20 +232,27 @@ function api_works_delete(string $id): void {
     send_json(['ok' => true]);
 }
 
-function api_works_images(string $id): void {
+// PUT: استبدال كل صور العمل. POST: إضافة صور جديدة إلى آخر المعرض (مع إبقاء الحالية)
+function api_works_images(string $id, bool $append = false): void {
     require_permission('editWork');
     $urls = receive_images('images', true);
     if (!$urls) send_json(['error' => 'لم يتم إرفاق أي صور.'], 400);
-    [$work, $old] = works_mutate(function (&$works) use ($id, $urls) {
+    [$work, $old] = works_mutate(function (&$works) use ($id, $urls, $append) {
         $i = null;
         foreach ($works as $k => $w) if (($w['id'] ?? '') === $id) $i = $k;
         if ($i === null) { remove_replaced_images($urls, ''); send_json(['error' => 'العمل غير موجود.'], 404); }
         $old = $works[$i]['images'] ?? [];
+        if ($append) {
+            if (count($old) + count($urls) > 100) { remove_replaced_images($urls, ''); send_json(['error' => 'الحد الأقصى 100 صورة لكل مشروع.'], 400); }
+            $works[$i]['images'] = array_values(array_merge($old, $urls));
+            return [$works[$i], []];
+        }
         $works[$i]['images'] = $urls;
         return [$works[$i], $old];
     });
-    drop_replaced_images($old);
-    send_json(['ok' => true, 'work' => $work]);
+    if ($old) drop_replaced_images($old);
+    log_activity('update', 'work', ($append ? 'إضافة صور: ' : 'استبدال الصور: ') . work_label($work));
+    send_json(['ok' => true, 'work' => $work, 'added' => $urls]);
 }
 
 /* ---------- الإعدادات ---------- */

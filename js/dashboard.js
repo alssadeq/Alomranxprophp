@@ -641,9 +641,13 @@
           editBtn.addEventListener('click', () => openEditWork(w));
           chips.appendChild(editBtn);
 
-          const imagesBtn = el(`<button type="button" class="chip-btn">الصور</button>`);
+          const imagesBtn = el(`<button type="button" class="chip-btn">🖼 الصور (${(w.images || []).length})</button>`);
           imagesBtn.addEventListener('click', () => openImagesModal(w));
           chips.appendChild(imagesBtn);
+          const cover = card.querySelector('.work-card-image');
+          cover.classList.add('is-clickable');
+          cover.title = 'إدارة صور المشروع';
+          cover.addEventListener('click', () => openImagesModal(w));
 
           const pinBtn = el(`<button type="button" class="chip-btn ${w.pinned ? 'is-on' : ''}">${w.pinned ? 'إلغاء التثبيت' : 'تثبيت بالرئيسية'}</button>`);
           pinBtn.addEventListener('click', async () => {
@@ -748,35 +752,202 @@
       });
     }
 
-    /* ---------- رفع صور معرض العمل ---------- */
+    /* ---------- إدارة صور العمل: استعراض، إضافة، ترتيب، صورة رئيسية، تدوير، استبدال، حذف ---------- */
+    // الصورة الأولى في القائمة هي الصورة الرئيسية التي تظهر في بطاقة العمل بالموقع.
+    // كل تغيير يُحفظ فوراً على الخادم.
     function openImagesModal(work) {
+      let imgs = [...(work.images || [])];
+      let busy = false;
       const overlay = el(`
         <div class="modal-overlay">
-          <div class="modal-box">
-            <h3>صور المشروع: ${escapeHtml(work.title)}</h3>
-            <p class="form-note">اختر الصور (بدون حد أقصى لعددها) — سيتم استبدال كل الصور الحالية بهذه الصور الجديدة.</p>
-            <div class="form-field"><input type="file" id="im-files" accept="image/*" multiple><p class="size-hint">📐 المقاس المقترح: أفقية 1600 × 1200 بكسل (4:3)</p></div>
-            <div class="modal-actions">
-              <button type="button" class="btn btn-outline" id="imCancel">إلغاء</button>
-              <button type="button" class="btn btn-dark" id="imSave">رفع الصور</button>
+          <div class="modal-box wg-box">
+            <div class="wg-head">
+              <div>
+                <h3>صور المشروع: ${escapeHtml(biText(work.title))}</h3>
+                <p class="form-note wg-note">الصورة التي عليها ⭐ هي <strong>الصورة الرئيسية</strong> وتظهر في بطاقة العمل بالموقع. اضغط على أي صورة لاستعراضها بحجم كبير. تُحفظ التغييرات فوراً.</p>
+              </div>
+              <button type="button" class="wg-close" aria-label="إغلاق">✕</button>
             </div>
+            <div class="wg-grid"></div>
+            <div class="wg-add">
+              <label class="btn btn-sand wg-add-btn">+ إضافة صور<input type="file" accept="image/*" multiple hidden></label>
+              <span class="size-hint">📐 المقاس المقترح: أفقية 1600 × 1200 بكسل (4:3). يمكنك اختيار عدة صور معاً.</span>
+            </div>
+            <p class="form-note wg-status" aria-live="polite"></p>
           </div>
         </div>
       `);
       document.body.appendChild(overlay);
-      overlay.querySelector('#imCancel').addEventListener('click', () => overlay.remove());
-      overlay.querySelector('#imSave').addEventListener('click', async () => {
-        const files = overlay.querySelector('#im-files').files;
-        if (!files.length) { showToast('اختر صورة واحدة على الأقل.'); return; }
+      const grid = overlay.querySelector('.wg-grid');
+      const status = overlay.querySelector('.wg-status');
+      const close = () => { overlay.remove(); loadWorks(); };
+      overlay.querySelector('.wg-close').addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+      const setBusy = (on, msg) => {
+        busy = on;
+        overlay.classList.toggle('wg-busy', on);
+        if (msg !== undefined) status.textContent = msg;
+      };
+      async function save(list, msg) {
+        const r = await api(`/api/works/${work.id}`, { method: 'PUT', body: JSON.stringify({ images: list }) });
+        imgs = [...(r.work.images || [])];
+        render();
+        if (msg) { status.textContent = msg; showToast(msg); }
+      }
+      async function upload(files) {
         const fd = new FormData();
         (await compressImages(files, 'work')).forEach(f => fd.append('images[]', f, f.name));
-        try {
-          await api(`/api/works/${work.id}/images`, { method: 'PUT', body: fd });
-          showToast('تم تحديث صور المشروع.');
-          overlay.remove();
-          loadWorks();
-        } catch (err) { showToast(err.message); }
+        const r = await api(`/api/works/${work.id}/images`, { method: 'POST', body: fd });
+        return r.added || [];
+      }
+      async function run(label, fn) {
+        if (busy) return;
+        setBusy(true, label);
+        try { await fn(); }
+        catch (err) { status.textContent = 'تعذر التنفيذ: ' + err.message; showToast(err.message); }
+        finally { setBusy(false); }
+      }
+
+      function render() {
+        if (!imgs.length) {
+          grid.innerHTML = '<div class="wg-empty">لا توجد صور لهذا المشروع بعد. أضف صوراً من الزر بالأسفل.</div>';
+          return;
+        }
+        grid.innerHTML = imgs.map((src, i) => `
+          <div class="wg-tile ${i === 0 ? 'is-cover' : ''}" data-i="${i}">
+            <button type="button" class="wg-thumb" data-act="view" title="استعراض الصورة"><img src="${escapeAttr(src)}" alt="صورة ${i + 1}" loading="lazy"></button>
+            ${i === 0 ? '<span class="wg-badge">⭐ الصورة الرئيسية</span>' : `<span class="wg-num">${i + 1}</span>`}
+            <div class="wg-tools">
+              ${i === 0 ? '' : '<button type="button" data-act="cover" class="wg-cover-btn" title="تعيين كصورة رئيسية">⭐ تعيين رئيسية</button>'}
+              <div class="wg-row">
+                <button type="button" data-act="prev" title="تقديم" ${i === 0 ? 'disabled' : ''}>→</button>
+                <button type="button" data-act="next" title="تأخير" ${i === imgs.length - 1 ? 'disabled' : ''}>←</button>
+                <button type="button" data-act="rotate" title="تدوير 90°">⟳</button>
+                <label title="استبدال الصورة" class="wg-replace">⇄<input type="file" accept="image/*" hidden></label>
+                <button type="button" data-act="delete" class="wg-del" title="حذف الصورة">🗑</button>
+              </div>
+            </div>
+          </div>`).join('');
+        grid.querySelectorAll('.wg-replace input').forEach(inp => inp.addEventListener('change', () => {
+          const i = +inp.closest('.wg-tile').dataset.i;
+          const file = inp.files[0];
+          if (!file) return;
+          run('جارِ استبدال الصورة...', async () => {
+            const [url] = await upload([file]);
+            const list = [...imgs]; list[i] = url;
+            await save(list, 'تم استبدال الصورة.');
+          });
+        }));
+      }
+
+      grid.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn || busy) return;
+        const i = +btn.closest('.wg-tile').dataset.i;
+        const act = btn.dataset.act;
+        if (act === 'view') return openWorkLightbox(imgs, i);
+        if (act === 'cover') {
+          const list = [...imgs]; const [x] = list.splice(i, 1); list.unshift(x);
+          return run('جارِ الحفظ...', () => save(list, 'تم تعيين الصورة الرئيسية.'));
+        }
+        if (act === 'prev' || act === 'next') {
+          const j = act === 'prev' ? i - 1 : i + 1;
+          if (j < 0 || j >= imgs.length) return;
+          const list = [...imgs]; [list[i], list[j]] = [list[j], list[i]];
+          return run('جارِ الحفظ...', () => save(list, j === 0 ? 'تم تعيين الصورة الرئيسية.' : 'تم تغيير الترتيب.'));
+        }
+        if (act === 'delete') {
+          if (!confirm(i === 0 && imgs.length > 1 ? 'حذف الصورة الرئيسية؟ ستصبح الصورة التالية هي الرئيسية.' : 'حذف هذه الصورة نهائياً؟')) return;
+          const list = imgs.filter((_, k) => k !== i);
+          return run('جارِ الحذف...', () => save(list, 'تم حذف الصورة.'));
+        }
+        if (act === 'rotate') {
+          return run('جارِ تدوير الصورة...', async () => {
+            const file = await rotateImageFile(imgs[i]);
+            const [url] = await upload([file]);
+            const list = [...imgs]; list[i] = url;
+            await save(list, 'تم تدوير الصورة.');
+          });
+        }
       });
+
+      overlay.querySelector('.wg-add-btn input').addEventListener('change', (e) => {
+        const files = [...e.target.files];
+        e.target.value = '';
+        if (!files.length) return;
+        run(`جارِ رفع ${files.length} صورة...`, async () => {
+          await upload(files);
+          const r = await api('/api/works');
+          const w = (r.works || []).find(x => x.id === work.id);
+          imgs = [...((w && w.images) || [])];
+          render();
+          status.textContent = `تمت إضافة ${files.length} صورة.`;
+          showToast(status.textContent);
+        });
+      });
+      render();
+    }
+
+    // تدوير صورة 90° مع عقارب الساعة في المتصفح، وإرجاعها كملف جاهز للرفع
+    function rotateImageFile(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalHeight; c.height = img.naturalWidth;
+          const ctx = c.getContext('2d');
+          ctx.translate(c.width, 0); ctx.rotate(Math.PI / 2);
+          ctx.drawImage(img, 0, 0);
+          c.toBlob(b => {
+            if (!b) return reject(new Error('تعذر تدوير الصورة.'));
+            const ext = b.type === 'image/webp' ? 'webp' : 'jpg';
+            resolve(new File([b], 'rotated.' + ext, { type: b.type }));
+          }, 'image/webp', 0.92);
+        };
+        img.onerror = () => reject(new Error('تعذر تحميل الصورة.'));
+        img.src = src + (src.includes('?') ? '&' : '?') + 'r=' + Date.now();
+      });
+    }
+
+    // استعراض صور العمل بحجم كبير مع التنقل بينها (أزرار، أسهم لوحة المفاتيح، السحب على الجوال)
+    function openWorkLightbox(list, start) {
+      let i = start;
+      const lb = el(`
+        <div class="wg-lightbox" role="dialog" aria-label="استعراض الصور">
+          <button type="button" class="wg-lb-close" aria-label="إغلاق">✕</button>
+          <button type="button" class="wg-lb-nav wg-lb-prev" aria-label="السابقة">›</button>
+          <img alt="">
+          <button type="button" class="wg-lb-nav wg-lb-next" aria-label="التالية">‹</button>
+          <div class="wg-lb-count"></div>
+        </div>`);
+      const img = lb.querySelector('img');
+      const show = () => {
+        img.src = list[i];
+        lb.querySelector('.wg-lb-count').textContent = `${i + 1} / ${list.length}${i === 0 ? ' · الصورة الرئيسية' : ''}`;
+      };
+      const go = (d) => { i = (i + d + list.length) % list.length; show(); };
+      const closeLb = () => { lb.remove(); document.removeEventListener('keydown', onKey); };
+      const onKey = (e) => {
+        if (e.key === 'Escape') closeLb();
+        else if (e.key === 'ArrowLeft') go(1);
+        else if (e.key === 'ArrowRight') go(-1);
+      };
+      lb.querySelector('.wg-lb-close').addEventListener('click', closeLb);
+      lb.querySelector('.wg-lb-prev').addEventListener('click', () => go(-1));
+      lb.querySelector('.wg-lb-next').addEventListener('click', () => go(1));
+      lb.addEventListener('click', (e) => { if (e.target === lb) closeLb(); });
+      let x0 = null;
+      lb.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+      lb.addEventListener('touchend', (e) => {
+        if (x0 === null) return;
+        const dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 40) go(dx > 0 ? 1 : -1);
+      });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(lb);
+      if (list.length < 2) lb.querySelectorAll('.wg-lb-nav').forEach(b => b.hidden = true);
+      show();
     }
 
     /* ============================= تبويب الحساب والمستخدمين ============================= */

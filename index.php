@@ -165,6 +165,7 @@ if (str_starts_with($path, '/api/')) {
         ['PATCH', "#^/api/works/$id/visibility$#", fn($m) => api_works_visibility($m[1])],
         ['PATCH', "#^/api/works/$id/pin$#", fn($m) => api_works_pin($m[1])],
         ['PUT', "#^/api/works/$id/images$#", fn($m) => api_works_images($m[1])],
+        ['POST', "#^/api/works/$id/images$#", fn($m) => api_works_images($m[1], true)],
         ['PATCH', "#^/api/users/$id/permissions$#", fn($m) => api_users_permissions($m[1])],
         ['PATCH', "#^/api/users/$id/suspend$#", fn($m) => api_users_suspend($m[1])],
         ['DELETE', "#^/api/users/$id$#", fn($m) => api_users_delete($m[1])],
