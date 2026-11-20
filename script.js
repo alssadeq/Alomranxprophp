@@ -704,7 +704,7 @@ function setupBanners(banners, bannerLogo, bannerTextVisible) {
       <div class="hero-banner-overlay"></div>
       <div class="hero-banner-content">
         ${showLogo ? `<div class="hero-banner-logo"><img src="${escapeAttr(safeUrl(bannerLogo.image, ""))}" alt="شعار العمران"></div>` : '<div></div>'}
-        ${showText ? `
+        ${showText && ((b.title && (b.title.ar || b.title.en))) ? `
         <div class="hero-banner-text">
           <strong class="ar">${escapeHtml((b.title && b.title.ar) || '')}</strong>
           <span class="en">${escapeHtml((b.title && b.title.en) || '')}</span>
@@ -896,7 +896,7 @@ function renderCustomBanners(list) {
     const ext = /^https?:\/\//i.test(link) && !link.includes(location.host);
     const target = ext ? ' target="_blank" rel="noopener"' : '';
     const img = hasImage ? `<picture>${b.imageMobile ? `<source media="(max-width: 700px)" srcset="${escapeAttr(b.imageMobile)}">` : ''}<img src="${escapeAttr(b.image || b.imageMobile)}" alt="${escapeAttr(title || 'بنر')}" loading="lazy"></picture>` : '';
-    const text = (title || sub || (btn && link)) ? `<div class="cb-text container">${title ? `<h2>${escapeHtmlText(title)}</h2>` : ''}${sub ? `<p>${escapeHtmlText(sub)}</p>` : ''}${btn && link ? `<a class="btn btn-sand cb-btn" href="${escapeAttr(link)}"${target}>${escapeHtmlText(btn)}</a>` : ''}</div>` : '';
+    const text = (title || sub || (btn && link)) ? `<div class="cb-text container"><div class="cb-text-panel${hasImage ? ' text-panel' : ''}">${title ? `<h2>${escapeHtmlText(title)}</h2>` : ''}${sub ? `<p>${escapeHtmlText(sub)}</p>` : ''}${btn && link ? `<a class="btn btn-sand cb-btn" href="${escapeAttr(link)}"${target}>${escapeHtmlText(btn)}</a>` : ''}</div></div>` : '';
     // بدون زر: البنر كله قابل للضغط إن كان له رابط
     const inner = `<div class="cb-inner">${img}${text}</div>`;
     el.innerHTML = link && !btn ? `<a class="cb-link" href="${escapeAttr(link)}"${target} aria-label="${escapeAttr(title || 'بنر')}">${inner}</a>` : inner;
@@ -905,6 +905,16 @@ function renderCustomBanners(list) {
 }
 function escapeAttr(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function escapeHtmlText(v) { return escapeAttr(v).replace(/\n/g, '<br>'); }
+
+function markTextOnImage(root, on) {
+  root.classList.toggle('has-bg-image', on);
+  root.classList.remove('bg-text-light', 'bg-text-dark');
+  if (!on) return;
+  const sample = root.querySelector('h1, h2, h3') || root;
+  const m = getComputedStyle(sample).color.match(/\d+(\.\d+)?/g) || [0, 0, 0];
+  const lum = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) / 255;
+  root.classList.add(lum > 0.6 ? 'bg-text-light' : 'bg-text-dark');
+}
 
 function applySectionSettings(pageSections, customBanners) {
   if (!pageSections) return;
@@ -951,6 +961,9 @@ function applySectionSettings(pageSections, customBanners) {
 
     // لون النص العام داخل القسم
     if (s.textColor) root.style.color = s.textColor;
+
+    // قسم بخلفية صورة: خلفية خفيفة خلف كتلة النص فقط، لونها حسب لون النص (فاتحة للنص الداكن والعكس)
+    markTextOnImage(root, s.bgMode === 'image' && !!s.bgImage);
 
     // لون البطاقات/العناصر داخل القسم
     if (s.boxColor && map.box) {

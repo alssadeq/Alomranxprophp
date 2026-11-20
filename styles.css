@@ -1478,3 +1478,38 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
 @media (max-width: 760px){
   .page-hero-text{ display:block; padding:16px 18px 18px; border-radius:14px; }
 }
+
+/* =========================================================
+   خلفية خفيفة خلف النص فقط فوق الصور في كل الصفحات
+   (بانرات الرئيسية، البنرات المضافة، والأقسام ذات خلفية الصورة)
+   ========================================================= */
+.hero-banner-text, .cb-text-panel.text-panel{
+  background:rgba(30,42,50,.42);
+  -webkit-backdrop-filter:blur(6px) saturate(1.1); backdrop-filter:blur(6px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.14); border-radius:18px;
+  box-shadow:0 10px 30px rgba(10,16,20,.18);
+}
+.hero-banner-text{ padding:14px 22px 16px; }
+.cb-text-panel{ display:inline-block; max-width:min(720px, 100%); }
+.cb-text-panel.text-panel{ padding:20px 26px 22px; }
+.cb-text-panel h2:last-child, .cb-text-panel p:last-child{ margin-bottom:0; }
+/* النص فوق اللوحة واضح بذاته، فلا حاجة لظل النص ولا لتظليل الصورة كاملة */
+.custom-banner .cb-text-panel.text-panel h2, .custom-banner .cb-text-panel.text-panel p{ text-shadow:none; }
+
+.has-bg-image:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){
+  padding:20px 24px; border-radius:18px;
+  -webkit-backdrop-filter:blur(6px) saturate(1.1); backdrop-filter:blur(6px) saturate(1.1);
+}
+.has-bg-image.bg-text-light:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){
+  background:rgba(30,42,50,.42); border:1px solid rgba(255,255,255,.14); box-shadow:0 10px 30px rgba(10,16,20,.18);
+}
+.has-bg-image.bg-text-dark:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){
+  background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.6); box-shadow:0 10px 30px rgba(10,16,20,.10);
+}
+.has-bg-image.bg-text-light:not(.page-hero) .section-title p{ color:rgba(255,255,255,.85); }
+@media (max-width: 760px){
+  .hero-banner-text{ padding:10px 16px 12px; border-radius:14px; }
+  .cb-text-panel{ display:block; }
+  .cb-text-panel.text-panel{ padding:14px 16px 16px; border-radius:14px; }
+  .has-bg-image:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){ padding:16px 16px; border-radius:14px; }
+}
