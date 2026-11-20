@@ -1552,3 +1552,9 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
 }
 /* الزر في البنر المضاف يبدأ في سطر جديد */
 .cb-text-panel.text-panel .cb-btn{ margin-top:12px; }
+
+/* اعتماد التظليل الكحلي الشفاف في كل مكان: حتى الأقسام ذات النص الداكن يصبح نصها أبيض فوق تظليل كحلي */
+.has-bg-image:not(.page-hero) .hl,
+.has-bg-image.bg-text-dark:not(.page-hero) .hl{ background:rgba(22,31,38,.58); color:#fff; }
+.has-bg-image:not(.page-hero) p > .hl{ color:rgba(255,255,255,.92); }
+.has-bg-image:not(.page-hero) .eyebrow > .hl, .page-hero-text .eyebrow > .hl{ color:#e2d6bd; }
