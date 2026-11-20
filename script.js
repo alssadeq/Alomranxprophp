@@ -294,7 +294,8 @@ function revealBlock(el) {
     return;
   }
   // حاوية تضم شبكة أو عناصر مُعلَّمة مسبقاً: نعالج محتواها بدل تحريكها كاملة
-  if (el.querySelector('.reveal, [data-reveal-bound]') || [...el.children].some(isGrid)) { [...el.children].forEach(revealBlock); return; }
+  // خلفية نص رأس الصفحة تبقى ظاهرة دائماً، ويتحرك النص داخلها سطراً سطراً كما كان
+  if (el.classList.contains('page-hero-text') || el.querySelector('.reveal, [data-reveal-bound]') || [...el.children].some(isGrid)) { [...el.children].forEach(revealBlock); return; }
   tagReveal(el);
 }
 function observeReveal(scope) {

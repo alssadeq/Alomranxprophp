@@ -1463,3 +1463,18 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
   .pd-photos-title{ padding:20px 14px 16px; }
   .pd-photos-title h2{ font-size:18px; }
 }
+
+/* خلفية خفيفة خلف نص رأس الصفحة فقط (المسار، العنوان، الوصف) حتى لا يتأثر النص بألوان صورة البنر */
+.page-hero-text{
+  display:inline-block; max-width:min(720px, 100%);
+  padding:20px 26px 22px; border-radius:18px;
+  background:rgba(30,42,50,.42);
+  -webkit-backdrop-filter:blur(6px) saturate(1.1); backdrop-filter:blur(6px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 30px rgba(10,16,20,.18);
+}
+.page-hero-text .breadcrumb{ margin-bottom:12px; }
+.page-hero-text p{ max-width:none; }
+@media (max-width: 760px){
+  .page-hero-text{ display:block; padding:16px 18px 18px; border-radius:14px; }
+}
