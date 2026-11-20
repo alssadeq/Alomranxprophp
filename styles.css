@@ -1513,3 +1513,42 @@ a.partner-card:hover{ transform:translateY(-4px); box-shadow:0 14px 30px rgba(24
   .cb-text-panel.text-panel{ padding:14px 16px 16px; border-radius:14px; }
   .has-bg-image:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){ padding:16px 16px; border-radius:14px; }
 }
+
+/* =========================================================
+   تظليل النص (Text Highlight) بدل المربع: الخلفية خلف أسطر النص فقط
+   مثل لون تمييز النص في Word، ويُكرَّر لكل سطر عند التفاف النص.
+   ========================================================= */
+/* إلغاء المربع */
+.page-hero-text, .hero-banner-text, .cb-text-panel.text-panel,
+.has-bg-image:not(.page-hero) :is(.section-title, .hero-copy, .about-copy){
+  background:none !important; border:0 !important; box-shadow:none !important;
+  -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  padding:0 !important; border-radius:0 !important;
+}
+.hero-banner-text{ display:block; }
+
+/* الأسطر المظللة: النص داخل كل عنوان/فقرة يُلف بعنصر .hl (من script.js) فيبقى العنصر نفسه كتلياً */
+.page-hero-text :is(.eyebrow, h1, p),
+.hero-banner-text :is(.ar, .en),
+.cb-text-panel.text-panel :is(h2, p),
+.has-bg-image:not(.page-hero) :is(.section-title, .hero-copy, .about-copy) > :is(h1, h2, h3, p, .eyebrow){
+  text-shadow:none !important; line-height:1.75;
+}
+.hero-banner-text :is(.ar, .en){ display:block; }
+.hero-banner-text .ar + .en{ margin-top:8px; }
+.cb-text-panel.text-panel h2{ margin-bottom:10px; }
+.hl{
+  padding:.1em .45em; border-radius:6px;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone;
+}
+/* لون التظليل: كحلي شفاف خلف النص الفاتح */
+.page-hero-text .hl, .hero-banner-text .hl, .cb-text-panel.text-panel .hl,
+.has-bg-image.bg-text-light:not(.page-hero) .hl{ background:rgba(22,31,38,.58); }
+/* وأبيض شفاف خلف النص الداكن */
+.has-bg-image.bg-text-dark:not(.page-hero) .hl{ background:rgba(255,255,255,.80); }
+/* المسار في رأس الصفحة: تظليل صغير بنفس الأسلوب */
+.page-hero-text .breadcrumb{
+  display:flex; width:fit-content; padding:.15em .55em; border-radius:6px; background:rgba(22,31,38,.58); text-shadow:none;
+}
+/* الزر في البنر المضاف يبدأ في سطر جديد */
+.cb-text-panel.text-panel .cb-btn{ margin-top:12px; }

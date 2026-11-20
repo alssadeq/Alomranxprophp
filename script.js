@@ -1452,3 +1452,39 @@ function revealSite() {
 
   if (settings) showWelcomeMessage(settings.welcomeMessage);
 })();
+
+/* ---------------- تظليل النص فوق الصور (Text Highlight) ----------------
+   يلف نص العناوين والفقرات التي تظهر فوق صورة بعنصر <span class="hl"> حتى تُرسم الخلفية
+   خلف أسطر النص فقط. يُعاد اللف تلقائياً عند تغيّر النص (اللغة، إعدادات لوحة التحكم...). */
+const HL_SELECTOR = [
+  '.page-hero-text .eyebrow', '.page-hero-text h1', '.page-hero-text p',
+  '.hero-banner-text .ar', '.hero-banner-text .en',
+  '.cb-text-panel.text-panel h2', '.cb-text-panel.text-panel p',
+  '.has-bg-image:not(.page-hero) .section-title > :is(h1,h2,h3,p,.eyebrow)',
+  '.has-bg-image:not(.page-hero) .hero-copy > :is(h1,h2,h3,p,.eyebrow)',
+  '.has-bg-image:not(.page-hero) .about-copy > :is(h1,h2,h3,p,.eyebrow)',
+].join(',');
+function applyTextHighlight() {
+  document.querySelectorAll(HL_SELECTOR).forEach((el) => {
+    const kids = el.childNodes;
+    if (kids.length === 1 && kids[0].nodeType === 1 && kids[0].classList.contains('hl')) return;
+    if (!el.textContent.trim()) return;
+    const span = document.createElement('span');
+    span.className = 'hl';
+    while (el.firstChild) span.appendChild(el.firstChild);
+    el.appendChild(span);
+  });
+  // أزل اللف إن لم يعد العنصر فوق صورة (مثلاً أُزيلت صورة خلفية القسم)
+  document.querySelectorAll('.hl').forEach((span) => {
+    const el = span.parentElement;
+    if (el && !el.matches(HL_SELECTOR)) { while (span.firstChild) el.insertBefore(span.firstChild, span); span.remove(); }
+  });
+}
+(function watchTextHighlight() {
+  let queued = false;
+  const run = () => { queued = false; applyTextHighlight(); };
+  const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(run); } };
+  schedule();
+  const main = document.querySelector('main');
+  if (main) new MutationObserver(schedule).observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+})();
